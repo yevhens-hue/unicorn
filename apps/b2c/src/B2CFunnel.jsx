@@ -147,23 +147,60 @@ export default function B2CFunnel() {
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
 
+  const Header = () => (
+    <header className="b2c-header">
+      <div 
+        className="header-logo" 
+        onClick={() => setStep(0)} 
+        style={{ cursor: 'pointer' }}
+      >
+        <span className="logo-icon">🦄</span>
+        Unicorn Pro
+      </div>
+      <nav className="header-nav">
+        <a 
+          href="#services" 
+          onClick={(e) => { 
+            e.preventDefault(); 
+            setStep(0); 
+            setTimeout(() => {
+              document.querySelector('.popular-tags')?.scrollIntoView({ behavior: 'smooth' });
+            }, 50);
+          }}
+        >
+          Services
+        </a>
+        <a 
+          href="#how-it-works" 
+          onClick={(e) => { 
+            e.preventDefault(); 
+            setStep(0); 
+            setTimeout(() => {
+              document.querySelector('.how-it-works-section')?.scrollIntoView({ behavior: 'smooth' });
+            }, 50);
+          }}
+        >
+          How it Works
+        </a>
+        <a 
+          href="https://unicorn-b2b.vercel.app/" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="login-link"
+        >
+          Contractor Login
+        </a>
+      </nav>
+    </header>
+  );
+
   // ----------------------------------------------------
   // HERO PAGE (Step 0) - Matches Screenshot EXACTLY
   // ----------------------------------------------------
   if (step === 0) {
     return (
       <>
-      <header className="b2c-header">
-        <div className="header-logo">
-          <span className="logo-icon">🦄</span>
-          Unicorn Pro
-        </div>
-        <nav className="header-nav">
-          <a href="#">Services</a>
-          <a href="#">How it Works</a>
-          <a href="#" className="login-link">Contractor Login</a>
-        </nav>
-      </header>
+      <Header />
       <div className="hero-page-wrapper">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="hero-section-new">
           
@@ -309,10 +346,10 @@ export default function B2CFunnel() {
         <div className="footer-content">
           <div className="footer-logo">Unicorn Pro</div>
           <div className="footer-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Contact Us</a>
-            <a href="#">Contractor Login</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); alert('Unicorn Pro - Privacy Policy (v1.0)'); }}>Privacy Policy</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); alert('Unicorn Pro - Terms of Service'); }}>Terms of Service</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); alert('Contact us at support@unicornpro.com'); }}>Contact Us</a>
+            <a href="https://unicorn-b2b.vercel.app/" target="_blank" rel="noopener noreferrer">Contractor Login</a>
           </div>
         </div>
         <div className="footer-bottom">
@@ -328,6 +365,8 @@ export default function B2CFunnel() {
   // ----------------------------------------------------
   if (step === 7) {
     return (
+      <>
+      <Header />
       <div className="wizard-container">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="thank-you-section wizard-card glass-card">
           <div className="success-icon-big">✅</div>
@@ -369,6 +408,8 @@ export default function B2CFunnel() {
   const currentProgress = (step / totalWizardSteps) * 100;
 
   return (
+    <>
+    <Header />
     <div className="wizard-container">
       <div className="wizard-header">
         <div className="wizard-progress-bar">
@@ -577,5 +618,6 @@ export default function B2CFunnel() {
         </AnimatePresence>
       </div>
     </div>
+    </>
   );
 }
