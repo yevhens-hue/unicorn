@@ -473,3 +473,216 @@
   font-size: 14px;
   color: #999;
 }
+
+/* NEW MODERN UI STYLES */
+.hero-modern {
+  max-width: 760px;
+}
+.social-proof-modern {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #a0aec0;
+  margin-bottom: 24px;
+}
+.avatar-group {
+  display: flex;
+}
+.avatar-group img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #111;
+  margin-left: -10px;
+}
+.avatar-group img:first-child {
+  margin-left: 0;
+}
+.search-hero-box {
+  padding: 32px;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+  margin-bottom: 16px;
+}
+.search-icon {
+  position: absolute;
+  left: 16px;
+  color: #64748b;
+}
+.search-hero-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 16px 12px 48px;
+  font-size: 1.1rem;
+  color: #1e293b;
+  outline: none;
+  cursor: pointer;
+}
+.search-btn {
+  padding: 12px 24px;
+  font-size: 1rem;
+}
+.popular-searches {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #888;
+  flex-wrap: wrap;
+}
+.popular-tag {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 6px 12px;
+  border-radius: 100px;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-size: 12px;
+}
+.popular-tag:hover {
+  background: rgba(124,58,237,0.2);
+  border-color: #7c3aed;
+  color: #fff;
+}
+.trust-badges-modern {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ccc;
+}
+.trust-badges-modern span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Matching Engine Loader */
+.matching-engine-section {
+  text-align: center;
+  padding: 40px 20px;
+}
+.radar-spinner {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.radar-pulse {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(124,58,237,0.5);
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+.matching-title {
+  font-size: 1.5rem;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.matching-sub {
+  color: #888;
+  margin-bottom: 32px;
+}
+.matching-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 300px;
+  margin: 0 auto;
+  text-align: left;
+}
+.match-step {
+  color: #555;
+  font-size: 14px;
+  transition: color 0.3s;
+}
+.match-step.active {
+  color: #10b981;
+}
+
+/* Project Details Form */
+.project-details-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  text-align: left;
+}
+.detail-question label {
+  display: block;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.detail-opt {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 14px;
+  border-radius: 12px;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-size: 14px;
+  text-align: center;
+}
+.detail-opt:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.2);
+}
+.detail-opt.selected {
+  background: rgba(124,58,237,0.15);
+  border-color: #7c3aed;
+  color: #fff;
+}
+
+/* Location Group */
+.location-group .input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-icon {
+  position: absolute;
+  left: 16px;
+  color: #64748b;
+}
+.location-group .input-with-icon input {
+  width: 100%;
+  padding-left: 44px;
+}
+.city-state-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
