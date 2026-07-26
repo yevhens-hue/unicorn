@@ -409,7 +409,13 @@
         </div>
         <div class="insight-box insight-yellow" style="margin-top: 20px;">
           <div class="insight-icon">🎯</div>
-          <div><strong>Логіка скоупінгу:</strong> Release 1 закриває повний loop "лід прийнятий → розподілений → доставлений → оплачений". Все інше — growth features, які не блокують перший дохід. Відкладаємо мобільний додаток, бо Web Push достатній для Speed-to-Lead на MVP; CRM — бо достатньо кнопки Return; AI-скоринг — бо потрібно накопичити мінімум 10K лідів для навчання моделі.</div>
+          <div>
+            <strong>Логіка скоупінгу (Release 1 vs Backlog R3):</strong> 
+            Release 1 закриває повний цикл <em>"лід прийнятий → валідований → розподілений → доставлений → оплачений"</em>. 
+            <div style="margin-top: 8px; font-size: 13.5px; line-height: 1.6; color: #fef08a;">
+              🤖 <strong>Обґрунтування щодо AI-скорингу:</strong> AI-скоринг у Release 1 є недоцільним. Впровадження ML-моделі (наприклад, <em>XGBoost</em> або <em>LightGBM</em>) планується в <strong>Release 3</strong>, коли платформа накопичить <strong>10,000+ реальних транзакцій з історією повернень та конверсій</strong>. Це дозволить навчити якісну модель із точністю <strong>Precision &gt; 90%</strong> без ризику втрати чи помилкового відсіювання валідних лідів (вирішення проблеми <em>Data Cold Start</em>). На MVP замість ML використовуємо перевірені детерміновані інструменти (<em>Twilio Lookup API + TrustedForm TCPA</em>).
+            </div>
+          </div>
         </div>
       </div>
 
