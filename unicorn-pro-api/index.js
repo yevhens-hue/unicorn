@@ -22,6 +22,30 @@ app.post('/api/leads', LeadController.submitLead);
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Ensure demo account demo@hvacmasters.com / demo1234 always exists
+    if (email === 'demo@hvacmasters.com' && password === 'demo1234') {
+      let demoBuyer = await prisma.buyer.findUnique({ where: { email } });
+      if (!demoBuyer) {
+        demoBuyer = await prisma.buyer.create({
+          data: {
+            name: 'HVAC Masters LLC',
+            email: 'demo@hvacmasters.com',
+            password: 'demo1234',
+            balance: 1000,
+            campaigns: {
+              create: [
+                { name: 'Nationwide HVAC Pro', vertical: 'HVAC', zipCodes: 'all', leadType: 'Both', maxBid: 65, dailyLimit: 100 },
+                { name: 'Nationwide Roofing Pro', vertical: 'Roofing', zipCodes: 'all', leadType: 'Both', maxBid: 75, dailyLimit: 100 }
+              ]
+            }
+          }
+        });
+      }
+      const token = Buffer.from(`${demoBuyer.id}:${demoBuyer.email}`).toString('base64');
+      return res.json({ token, buyer: { id: demoBuyer.id, name: demoBuyer.name, email: demoBuyer.email, balance: demoBuyer.balance } });
+    }
+
     const buyer = await prisma.buyer.findUnique({ where: { email } });
     if (!buyer || buyer.password !== password) {
       return res.status(401).json({ error: 'Invalid credentials' });
