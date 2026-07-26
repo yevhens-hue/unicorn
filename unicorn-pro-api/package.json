@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "npx prisma generate && npx prisma migrate deploy && node prisma/seed.js"
   },
   "keywords": [],
   "author": "",
