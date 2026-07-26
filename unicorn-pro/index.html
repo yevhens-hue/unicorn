@@ -518,45 +518,107 @@
         <p style="color: #a0a0a0; margin-bottom: 24px; font-size: 14px;">Ці React-мікросервіси повністю функціональні та зв'язані з Node.js бекендом. Вони задеплоєні на Vercel як окремі незалежні додатки у межах єдиної Turborepo екосистеми.</p>
 
         <!-- B2C -->
-        <details class="mvp-details">
-          <summary><strong>1. B2C Funnel</strong> (Портал клієнта) — <a href="https://unicorn-b2c.vercel.app/" target="_blank" class="loc-link">unicorn-b2c.vercel.app</a></summary>
+        <details class="mvp-details" open>
+          <summary><strong>1. B2C Funnel</strong> (Портал домовласника) — <a href="https://unicorn-b2c.vercel.app/" target="_blank" class="loc-link">unicorn-b2c.vercel.app</a></summary>
           <div class="mvp-content">
-            <p>Дозволяє домовласнику заповнити 5-кроковий квіз, валідує номер телефону через Twilio, створює запис TrustedForm (TCPA) і відправляє лід на аукціон.</p>
+            <p>5-кроковий квіз з підключенням Twilio Lookup, TrustedForm TCPA-сертифікацією та <strong>Кроком 6 Instant Online Slot Booking ($250 PPA)</strong>.</p>
             <div class="mock-browser">
-              <div class="mock-header"><span></span><span></span><span></span> <div class="mock-url">unicorn-b2c.vercel.app/funnel</div></div>
-              <div class="mock-body" style="text-align:center; padding: 40px; background:#121212; color:#fff;">
-                <h1 style="font-size:24px; margin-bottom: 20px;">What do you need help with?</h1>
-                <div style="display:flex; justify-content:center; gap: 10px;">
-                  <div style="padding:20px; border:1px solid #333; border-radius:12px; width:120px;">❄️ HVAC</div>
-                  <div style="padding:20px; border:1px solid #333; border-radius:12px; width:120px;">🏠 Roofing</div>
+              <div class="mock-header"><span></span><span></span><span></span> <div class="mock-url">unicorn-b2c.vercel.app/funnel?step=6</div></div>
+              <div class="mock-body" style="text-align:center; padding: 24px 20px; background:#0f172a; color:#fff;">
+                <div style="background: rgba(37, 99, 235, 0.15); border: 1px solid rgba(37, 99, 235, 0.3); padding: 6px 14px; border-radius: 20px; color: #60a5fa; font-size: 11px; font-weight: 700; display: inline-block; margin-bottom: 12px;">
+                  ⚡ STEP 6 — INSTANT ESTIMATE SLOT BOOKING
                 </div>
-                <div style="margin-top:30px; width:100%; height:8px; background:#333; border-radius:4px;"><div style="width:20%; height:100%; background:#7c3aed; border-radius:4px;"></div></div>
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px; color: #f8fafc;">Lock In Your Pro Visit Slot</h2>
+                <p style="font-size: 12px; color: #94a3b8; margin-bottom: 16px;">Select your preferred date & time for contractor estimate</p>
+                
+                <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
+                  <div style="padding: 8px 14px; border: 2px solid #2563eb; background: rgba(37, 99, 235, 0.2); border-radius: 10px; min-width: 80px;">
+                    <div style="font-size: 10px; color: #93c5fd; text-transform: uppercase;">Tomorrow</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #fff;">Jul 27</div>
+                  </div>
+                  <div style="padding: 8px 14px; border: 1px solid #334155; background: #1e293b; border-radius: 10px; min-width: 80px;">
+                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Tuesday</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #cbd5e1;">Jul 28</div>
+                  </div>
+                  <div style="padding: 8px 14px; border: 1px solid #334155; background: #1e293b; border-radius: 10px; min-width: 80px;">
+                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Wednesday</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #cbd5e1;">Jul 29</div>
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;">
+                  <div style="padding: 6px 12px; background: rgba(37, 99, 235, 0.25); border: 1px solid #3b82f6; border-radius: 6px; font-size: 11px; font-weight: 700; color: #60a5fa;">
+                    9:00 AM - 11:00 AM
+                  </div>
+                  <div style="padding: 6px 12px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; font-size: 11px; color: #94a3b8;">
+                    1:00 PM - 3:00 PM
+                  </div>
+                  <div style="padding: 6px 12px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; font-size: 11px; color: #94a3b8;">
+                    4:00 PM - 6:00 PM
+                  </div>
+                </div>
+
+                <div style="max-width: 360px; margin: 0 auto;">
+                  <button style="width: 100%; padding: 12px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border: none; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; margin-bottom: 8px;">
+                    ⚡ Confirm Appointment Slot ($250 PPA)
+                  </button>
+                  <div style="font-size: 11px; color: #64748b; text-decoration: underline;">
+                    Skip slot selection & submit standard inquiry ($50 CPL)
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </details>
 
         <!-- B2B -->
-        <details class="mvp-details">
+        <details class="mvp-details" open>
           <summary><strong>2. B2B Portal</strong> (Портал контрактора) — <a href="https://unicorn-b2b.vercel.app/" target="_blank" class="loc-link">unicorn-b2b.vercel.app</a></summary>
           <div class="mvp-content">
-            <p>Self-Serve кабінет. Дозволяє створювати кампанії з вибором Product Type (Leads, Calls, Clicks), керувати балансом (Stripe Mock) та вибирати Billing Cycle (Net-7, Net-30).</p>
+            <p>Self-Serve кабінет. Підтримує керування балансом, перегляд куплених лідів, створення кампаній з вибором Product Type (Leads, Appointments) та Billing Cycles (Net-7 - Net-30).</p>
             <div class="mock-browser">
               <div class="mock-header"><span></span><span></span><span></span> <div class="mock-url">unicorn-b2b.vercel.app/campaigns</div></div>
               <div class="mock-body" style="display:flex; background:#0f111a; color:#fff; text-align:left;">
-                <div style="width:200px; border-right:1px solid #222; padding:20px; font-size:13px; color:#888;">
-                  <div>📥 Lead Inbox (2)</div>
-                  <div style="color:#7c3aed; margin-top:15px;">🎯 Campaigns (3)</div>
-                  <div style="margin-top:15px;">💳 Billing</div>
-                </div>
-                <div style="flex:1; padding:20px;">
-                  <div style="display:flex; justify-content:space-between;"><h2>Campaigns</h2> <button style="background:#7c3aed; color:#fff; border:none; padding:8px 16px; border-radius:6px;">+ New Campaign</button></div>
-                  <div style="margin-top:20px; background:#1a1a2e; padding:15px; border-radius:8px; border:1px solid #333;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                      <div><strong>Miami HVAC Emergency</strong><br><span style="color:#888; font-size:12px;">HVAC · 33101 · Live Calls (Exclusive)</span></div>
-                      <div style="color:#10b981; font-weight:bold;">$120 / lead</div>
-                      <div><span style="background:#10b981; padding:4px 8px; border-radius:20px; font-size:11px;">Active</span></div>
+                <div style="width:200px; border-right:1px solid rgba(255,255,255,0.08); padding:16px; font-size:12px; color:#888;">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <div style="width:28px; height:28px; border-radius:50%; background:#7c3aed; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold; font-size:11px;">H</div>
+                    <div>
+                      <strong style="color:#fff; font-size:11px; display:block;">HVAC Masters LLC</strong>
+                      <span style="color:#10b981; font-size:10px; font-weight:600;">💳 $329.00</span>
                     </div>
+                  </div>
+                  <div style="padding:6px 10px; color:#aaa; margin-bottom:4px;">📥 Lead Inbox <span style="background:rgba(255,255,255,0.1); padding:1px 5px; border-radius:10px; font-size:10px; color:#fff; float:right;">2</span></div>
+                  <div style="padding:6px 10px; background:rgba(124,58,237,0.2); color:#a78bfa; border-radius:6px; font-weight:700; margin-bottom:4px;">🎯 Campaigns <span style="background:#7c3aed; padding:1px 5px; border-radius:10px; font-size:10px; color:#fff; float:right;">2</span></div>
+                  <div style="padding:6px 10px; color:#aaa; margin-bottom:4px;">📊 Analytics</div>
+                  <div style="padding:6px 10px; color:#aaa;">💳 Wallet & Billing</div>
+                </div>
+                
+                <div style="flex:1; padding:16px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px;">
+                    <h2 style="font-size:15px; margin:0; font-weight:800;">Campaigns</h2>
+                    <button style="background:linear-gradient(135deg, #7c3aed, #6d28d9); color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700;">+ New Campaign</button>
+                  </div>
+
+                  <div style="background:#1a1a2e; padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                      <strong style="font-size:12px; color:#fff; display:block;">HVAC Florida</strong>
+                      <span style="color:#888; font-size:10px;">HVAC · all · Leads (Both)</span>
+                    </div>
+                    <div style="text-align:right;">
+                      <strong style="color:#10b981; font-size:12px;">$85.00</strong> <span style="font-size:9px; color:#666; display:block;">max bid</span>
+                    </div>
+                    <span style="background:rgba(16,185,129,0.15); color:#10b981; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700;">Active</span>
+                  </div>
+
+                  <div style="background:#1a1a2e; padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                      <strong style="font-size:12px; color:#fff; display:block;">Roofing National</strong>
+                      <span style="color:#888; font-size:10px;">Roofing · all · Appointments (PPA)</span>
+                    </div>
+                    <div style="text-align:right;">
+                      <strong style="color:#10b981; font-size:12px;">$250.00</strong> <span style="font-size:9px; color:#666; display:block;">max bid</span>
+                    </div>
+                    <span style="background:rgba(16,185,129,0.15); color:#10b981; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700;">Active</span>
                   </div>
                 </div>
               </div>
@@ -565,31 +627,49 @@
         </details>
 
         <!-- Admin -->
-        <details class="mvp-details">
+        <details class="mvp-details" open>
           <summary><strong>3. Admin Dashboard</strong> (Адмінка) — <a href="https://unicorn-abmin.vercel.app/" target="_blank" class="loc-link">unicorn-abmin.vercel.app</a></summary>
           <div class="mvp-content">
-            <p>Огляд KPI платформи (Revenue, Fill Rate), логів аукціонів Ping-Post, та автоматично згенерованих інвойсів для синхронізації з QuickBooks.</p>
+            <p>Огляд KPI CPL+PPA, управління покупцями, логами аукціонів, модальними вікнами Інвойсів (PDF Modal) та синхронізацією з QuickBooks Online.</p>
             <div class="mock-browser">
-              <div class="mock-header"><span></span><span></span><span></span> <div class="mock-url">unicorn-abmin.vercel.app/admin</div></div>
-              <div class="mock-body" style="padding: 20px; background:#111; color:#fff;">
-                <div style="display:flex; gap:15px; margin-bottom: 20px;">
-                  <div style="padding:15px; background:#222; border-radius:8px; flex:1;">Total Revenue<br><strong style="font-size:24px; color:#10b981;">$27,635</strong></div>
-                  <div style="padding:15px; background:#222; border-radius:8px; flex:1;">Fill Rate<br><strong style="font-size:24px; color:#3b82f6;">84.2%</strong></div>
-                  <div style="padding:15px; background:#222; border-radius:8px; flex:1;">Unsold Leads<br><strong style="font-size:24px; color:#ef4444;">12</strong></div>
+              <div class="mock-header"><span></span><span></span><span></span> <div class="mock-url">unicorn-admin.vercel.app/admin</div></div>
+              <div class="mock-body" style="padding: 16px; background:#0f172a; color:#fff;">
+                <div style="display:flex; gap:10px; margin-bottom: 12px;">
+                  <div style="padding:10px; background:rgba(30, 41, 59, 0.8); border:1px solid rgba(255,255,255,0.08); border-radius:8px; flex:1;">
+                    <span style="font-size:10px; color:#94a3b8;">Fill Rate</span><br>
+                    <strong style="font-size:16px; color:#3b82f6; font-weight:800;">100.0%</strong>
+                  </div>
+                  <div style="padding:10px; background:rgba(30, 41, 59, 0.8); border:1px solid rgba(255,255,255,0.08); border-radius:8px; flex:1;">
+                    <span style="font-size:10px; color:#94a3b8;">Avg Lead Price</span><br>
+                    <strong style="font-size:16px; color:#f59e0b; font-weight:800;">$69.00</strong>
+                  </div>
+                  <div style="padding:10px; background:rgba(30, 41, 59, 0.8); border:1px solid rgba(255,255,255,0.08); border-radius:8px; flex:1;">
+                    <span style="font-size:10px; color:#94a3b8;">PPA Appointments</span><br>
+                    <strong style="font-size:16px; color:#2563eb; font-weight:800;">1 ($250)</strong>
+                  </div>
                 </div>
-                <h3 style="margin-bottom:10px;">Automated Invoicing (Sync: QuickBooks)</h3>
-                <div style="background:#1a1a1a; padding:10px; border-radius:8px; border:1px solid #333; font-size:13px;">
-                  <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:8px;">
-                    <span><strong>INV-2026-001</strong> (Results Machine LLC)</span> <span>Net-7</span> <span style="color:#10b981;">$1,450.00</span> <span style="color:#f59e0b;">Pending</span>
+
+                <div style="background:rgba(37, 99, 235, 0.12); border:1px solid rgba(37, 99, 235, 0.3); padding:8px 12px; border-radius:6px; margin-bottom:12px; font-size:11px; color:#93c5fd;">
+                  🚀 <strong>Hybrid Transition Strategy:</strong> Phase 1 Online Slots ($250 PPA) + Phase 2 Call Center Qualification
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <h4 style="margin:0; font-size:12px; color:#cbd5e1;">Automated Invoicing & QuickBooks Sync</h4>
+                  <button style="background:linear-gradient(135deg, #2563eb, #1d4ed8); color:#fff; border:none; padding:4px 8px; border-radius:5px; font-size:10px; font-weight:700;">⚡ Sync QuickBooks</button>
+                </div>
+                <div style="background:#1e293b; padding:8px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.08); font-size:11px;">
+                  <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:4px; margin-bottom:4px;">
+                    <span><strong>INV-2026-001</strong> (HVAC Masters LLC)</span> <span style="color:#94a3b8;">Net-7</span> <strong style="color:#10b981;">$329.00</strong> <span style="color:#10b981; font-weight:700;">Paid</span>
                   </div>
                   <div style="display:flex; justify-content:space-between;">
-                    <span><strong>INV-2026-002</strong> (Cash America Net)</span> <span>Net-30</span> <span style="color:#10b981;">$8,200.00</span> <span style="color:#10b981;">Paid</span>
+                    <span><strong>INV-2026-002</strong> (CoolBreeze Services)</span> <span style="color:#94a3b8;">Net-15</span> <strong style="color:#10b981;">$264.00</strong> <span style="color:#f59e0b; font-weight:700;">Pending</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </details>
+      </div>
       </div>
 
       <style>
