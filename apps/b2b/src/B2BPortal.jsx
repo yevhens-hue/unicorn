@@ -339,7 +339,9 @@ export default function B2BPortal() {
                       <div className="lead-body">
                         <h3>{lead.name}</h3>
                         <div className="lead-details">
-                          <span><strong>Service:</strong> {lead.type}</span>
+                          <span><strong>Service:</strong> {lead.vertical ? `${lead.vertical} - ` : ''}{lead.type}</span>
+                          {lead.projectScope && <span><strong>Scope:</strong> {lead.projectScope}</span>}
+                          {lead.timeframe && <span><strong>Timeframe:</strong> {lead.timeframe}</span>}
                           <span><strong>ZIP:</strong> {lead.zip}</span>
                           <span><strong>Cost:</strong> ${lead.price}</span>
                         </div>

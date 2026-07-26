@@ -138,7 +138,7 @@ export default function AdminPortal() {
                     <thead>
                       <tr>
                         <th>ID</th><th>Name</th><th>Service</th><th>ZIP</th>
-                        <th>Status</th><th>Urgency</th><th>Buyers</th><th>Date</th>
+                        <th>Status</th><th>Timeframe</th><th>Scope</th><th>Urgency</th><th>Buyers</th><th>Date</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -149,9 +149,11 @@ export default function AdminPortal() {
                         <tr key={l.id}>
                           <td>#{l.id}</td>
                           <td><strong>{l.name}</strong></td>
-                          <td>{l.serviceType}</td>
+                          <td>{l.vertical ? `${l.vertical} - ` : ''}{l.serviceType}</td>
                           <td>{l.zipCode}</td>
                           <td><span className={`status-pill status-${l.status.toLowerCase()}`}>{l.status}</span></td>
+                          <td>{l.timeframe || '-'}</td>
+                          <td>{l.projectScope || '-'}</td>
                           <td>{l.urgency}</td>
                           <td>{l.purchases?.length || 0}</td>
                           <td>{new Date(l.createdAt).toLocaleDateString()}</td>

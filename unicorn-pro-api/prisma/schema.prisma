@@ -37,10 +37,13 @@ model Campaign {
 model Lead {
   id           Int            @id @default(autoincrement())
   serviceType  String
+  vertical     String?
   zipCode      String
   propertyType String
   isOwner      Boolean
   urgency      String
+  timeframe    String?
+  projectScope String?
   name         String
   phone        String
   email        String
