@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Star, ArrowRight, ShieldCheck, Zap, Fan, Flame, Settings, Wind, Sun, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import PhoneInput from '../components/PhoneInput';
+import PhoneInput from './components/PhoneInput';
 import './B2CFunnel.css';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
