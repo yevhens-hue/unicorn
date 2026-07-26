@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, FileText, BarChart2, List, AlertTriangle } from 'lucide-react';
 import './AdminPortal.css';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API = import.meta.env.VITE_API_URL || 'https://unicorn-pro-api-backend.vercel.app';
 const ADMIN_KEY = 'unicorn-admin-2024';
 const headers = { 'x-admin-key': ADMIN_KEY };
 
@@ -74,6 +74,7 @@ export default function AdminPortal() {
             { id: 'leads', icon: FileText, label: 'Leads' },
             { id: 'buyers', icon: Users, label: 'Buyers' },
             { id: 'logs', icon: List, label: 'Auction Logs' },
+            { id: 'billing', icon: FileText, label: 'Invoicing' },
           ].map(({ id, icon: Icon, label }) => (
             <button key={id} className={activeTab === id ? 'active' : ''} onClick={() => setActiveTab(id)}>
               <Icon size={15}/> {label}
@@ -242,6 +243,63 @@ export default function AdminPortal() {
                           <td>{new Date(log.createdAt).toLocaleString()}</td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* BILLING & INVOICING */}
+            {activeTab === 'billing' && (
+              <div className="invoicing-section">
+                <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h2>Automated Invoicing</h2>
+                  <button className="btn-primary" onClick={() => alert('Mock: Successfully synced 3 new invoices to QuickBooks Online!')}>
+                    Sync with QuickBooks
+                  </button>
+                </div>
+                
+                <div className="admin-tip glass-card" style={{ marginBottom: 24, background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                  <AlertTriangle size={16} color="#10b981"/>
+                  <span style={{ color: '#10b981' }}>Replaces manual SQL queries. Invoices are auto-generated based on buyer terms (Net-7, Net-15, Net-30).</span>
+                </div>
+
+                <div className="admin-table-wrapper glass-card">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Invoice ID</th><th>Entity / Buyer</th><th>Term</th><th>Period</th>
+                        <th>Amount</th><th>Status</th><th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>INV-2026-001</td>
+                        <td><strong>Results Machine LLC</strong></td>
+                        <td>Net-7</td>
+                        <td>07/19/2026 - 07/25/2026</td>
+                        <td><strong style={{color:'#10b981'}}>$1,450.00</strong></td>
+                        <td><span className="status-pill status-unsold" style={{background: '#f59e0b20', color: '#f59e0b'}}>Pending</span></td>
+                        <td><button className="btn-sm" style={{background: '#0b57d0'}}>Send</button></td>
+                      </tr>
+                      <tr>
+                        <td>INV-2026-002</td>
+                        <td><strong>Cash America Net Holdings LLC</strong></td>
+                        <td>Net-30</td>
+                        <td>07/01/2026 - 07/31/2026</td>
+                        <td><strong style={{color:'#10b981'}}>$8,200.00</strong></td>
+                        <td><span className="status-pill status-active" style={{background: '#10b98120', color: '#10b981'}}>Paid</span></td>
+                        <td><button className="btn-sm">View</button></td>
+                      </tr>
+                      <tr>
+                        <td>INV-2026-003</td>
+                        <td><strong>HVAC Masters (Demo)</strong></td>
+                        <td>Net-15</td>
+                        <td>07/01/2026 - 07/15/2026</td>
+                        <td><strong style={{color:'#10b981'}}>$350.00</strong></td>
+                        <td><span className="status-pill status-active" style={{background: '#10b98120', color: '#10b981'}}>Paid</span></td>
+                        <td><button className="btn-sm">View</button></td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>

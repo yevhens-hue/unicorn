@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PhoneInput from './components/PhoneInput';
 import './B2CFunnel.css';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API = import.meta.env.VITE_API_URL || 'https://unicorn-pro-api-backend.vercel.app';
 
 const VERTICALS = [
   { id: 'HVAC', label: 'HVAC', icon: Fan, desc: 'AC, Heating, Furnace', color: '#3b82f6' },
@@ -74,6 +74,12 @@ export default function B2CFunnel() {
         body: JSON.stringify(formData),
       });
       const data = await res.json();
+      
+      if (!res.ok) {
+        alert(`Request failed: ${data.error || 'Unknown error'}`);
+        return;
+      }
+      
       setWinners(data.winners || []);
       setStep(6);
     } catch (err) {

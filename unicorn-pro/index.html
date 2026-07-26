@@ -19,6 +19,7 @@
       <a href="#task2" class="nav-link">02 MVP</a>
       <a href="#task3" class="nav-link">03 Дашборд</a>
       <a href="#action" class="nav-link">План дій</a>
+      <a href="https://you.ashbyhq.com/unicornpro/assignment/f29990e2-6f5e-4e36-a146-955fdde88dbc" target="_blank" class="nav-link" style="color: #c2e7ff; font-weight: 500;">🔗 Оригінал завдання</a>
     </div>
   </nav>
 
@@ -383,6 +384,8 @@
             <div class="scope-item"><span class="scope-tag s-be">BE</span> Stripe Prepaid Wallet (баланс)</div>
             <div class="scope-item"><span class="scope-tag s-fe">FE</span> Базовий дашборд аналітики</div>
             <div class="scope-item"><span class="scope-tag s-be">BE</span> Telegram-бот алертів (Fill Rate < 70%)</div>
+            <div class="scope-item" style="border-left: 2px solid #10b981; padding-left: 8px;"><span class="scope-tag s-fe">FE</span> Multi-Product Bidding (Calls/Clicks)</div>
+            <div class="scope-item" style="border-left: 2px solid #10b981; padding-left: 8px;"><span class="scope-tag s-be">BE</span> Auto Invoicing & QuickBooks Sync</div>
           </div>
           <div class="scope-col">
             <div class="scope-header out-scope">⏳ Backlog — Свідомо відкладаємо</div>
@@ -402,8 +405,104 @@
         </div>
       </div>
 
+      <!-- INTERACTIVE MVP LINKS -->
+      <div class="card dark-card" style="margin-top: 40px; border: 1px solid rgba(124, 58, 237, 0.3);">
+        <h3 class="card-title" style="color: #c2e7ff;">🚀 Інтерактивні MVP Додатки</h3>
+        <p style="color: #a0a0a0; margin-bottom: 24px; font-size: 14px;">Ці React-мікросервіси повністю функціональні та зв'язані з Node.js бекендом. Вони задеплоєні на Vercel як окремі незалежні додатки у межах єдиної Turborepo екосистеми.</p>
+
+        <!-- B2C -->
+        <details class="mvp-details">
+          <summary><strong>1. B2C Funnel</strong> (Портал клієнта) — <a href="https://unicorn-b2c.vercel.app/" target="_blank" class="loc-link">unicorn-b2c.vercel.app</a></summary>
+          <div class="mvp-content">
+            <p>Дозволяє домовласнику заповнити 5-кроковий квіз, валідує номер телефону через Twilio, створює запис TrustedForm (TCPA) і відправляє лід на аукціон.</p>
+            <div class="mock-browser">
+              <div class="mock-header"><span></span><span></span><span></span> <div class="mock-url">unicorn-b2c.vercel.app/funnel</div></div>
+              <div class="mock-body" style="text-align:center; padding: 40px; background:#121212; color:#fff;">
+                <h1 style="font-size:24px; margin-bottom: 20px;">What do you need help with?</h1>
+                <div style="display:flex; justify-content:center; gap: 10px;">
+                  <div style="padding:20px; border:1px solid #333; border-radius:12px; width:120px;">❄️ HVAC</div>
+                  <div style="padding:20px; border:1px solid #333; border-radius:12px; width:120px;">🏠 Roofing</div>
+                </div>
+                <div style="margin-top:30px; width:100%; height:8px; background:#333; border-radius:4px;"><div style="width:20%; height:100%; background:#7c3aed; border-radius:4px;"></div></div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- B2B -->
+        <details class="mvp-details">
+          <summary><strong>2. B2B Portal</strong> (Портал контрактора) — <a href="https://unicorn-b2b.vercel.app/" target="_blank" class="loc-link">unicorn-b2b.vercel.app</a></summary>
+          <div class="mvp-content">
+            <p>Self-Serve кабінет. Дозволяє створювати кампанії з вибором Product Type (Leads, Calls, Clicks), керувати балансом (Stripe Mock) та вибирати Billing Cycle (Net-7, Net-30).</p>
+            <div class="mock-browser">
+              <div class="mock-header"><span></span><span></span><span></span> <div class="mock-url">unicorn-b2b.vercel.app/campaigns</div></div>
+              <div class="mock-body" style="display:flex; background:#0f111a; color:#fff; text-align:left;">
+                <div style="width:200px; border-right:1px solid #222; padding:20px; font-size:13px; color:#888;">
+                  <div>📥 Lead Inbox (2)</div>
+                  <div style="color:#7c3aed; margin-top:15px;">🎯 Campaigns (3)</div>
+                  <div style="margin-top:15px;">💳 Billing</div>
+                </div>
+                <div style="flex:1; padding:20px;">
+                  <div style="display:flex; justify-content:space-between;"><h2>Campaigns</h2> <button style="background:#7c3aed; color:#fff; border:none; padding:8px 16px; border-radius:6px;">+ New Campaign</button></div>
+                  <div style="margin-top:20px; background:#1a1a2e; padding:15px; border-radius:8px; border:1px solid #333;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <div><strong>Miami HVAC Emergency</strong><br><span style="color:#888; font-size:12px;">HVAC · 33101 · Live Calls (Exclusive)</span></div>
+                      <div style="color:#10b981; font-weight:bold;">$120 / lead</div>
+                      <div><span style="background:#10b981; padding:4px 8px; border-radius:20px; font-size:11px;">Active</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Admin -->
+        <details class="mvp-details">
+          <summary><strong>3. Admin Dashboard</strong> (Адмінка) — <a href="https://unicorn-abmin.vercel.app/" target="_blank" class="loc-link">unicorn-abmin.vercel.app</a></summary>
+          <div class="mvp-content">
+            <p>Огляд KPI платформи (Revenue, Fill Rate), логів аукціонів Ping-Post, та автоматично згенерованих інвойсів для синхронізації з QuickBooks.</p>
+            <div class="mock-browser">
+              <div class="mock-header"><span></span><span></span><span></span> <div class="mock-url">unicorn-abmin.vercel.app/admin</div></div>
+              <div class="mock-body" style="padding: 20px; background:#111; color:#fff;">
+                <div style="display:flex; gap:15px; margin-bottom: 20px;">
+                  <div style="padding:15px; background:#222; border-radius:8px; flex:1;">Total Revenue<br><strong style="font-size:24px; color:#10b981;">$27,635</strong></div>
+                  <div style="padding:15px; background:#222; border-radius:8px; flex:1;">Fill Rate<br><strong style="font-size:24px; color:#3b82f6;">84.2%</strong></div>
+                  <div style="padding:15px; background:#222; border-radius:8px; flex:1;">Unsold Leads<br><strong style="font-size:24px; color:#ef4444;">12</strong></div>
+                </div>
+                <h3 style="margin-bottom:10px;">Automated Invoicing (Sync: QuickBooks)</h3>
+                <div style="background:#1a1a1a; padding:10px; border-radius:8px; border:1px solid #333; font-size:13px;">
+                  <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:8px;">
+                    <span><strong>INV-2026-001</strong> (Results Machine LLC)</span> <span>Net-7</span> <span style="color:#10b981;">$1,450.00</span> <span style="color:#f59e0b;">Pending</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between;">
+                    <span><strong>INV-2026-002</strong> (Cash America Net)</span> <span>Net-30</span> <span style="color:#10b981;">$8,200.00</span> <span style="color:#10b981;">Paid</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <style>
+        .mvp-details { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; margin-bottom: 15px; overflow: hidden; }
+        .mvp-details summary { padding: 15px 20px; cursor: pointer; color: #fff; display: flex; align-items: center; list-style: none; }
+        .mvp-details summary::-webkit-details-marker { display: none; }
+        .mvp-details summary::before { content: '▶'; margin-right: 10px; color: #7c3aed; display: inline-block; transition: transform 0.2s; }
+        .mvp-details[open] summary::before { transform: rotate(90deg); }
+        .loc-link { color: #8ab4f8; text-decoration: none; font-family: monospace; font-size: 13px; background: rgba(138, 180, 248, 0.1); padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
+        .mvp-content { padding: 20px; border-top: 1px solid #2a2a4a; color: #d0d0d0; }
+        .mock-browser { border: 1px solid #333; border-radius: 8px; overflow: hidden; margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .mock-header { background: #222; padding: 10px; display: flex; align-items: center; gap: 6px; }
+        .mock-header span { display: block; width: 10px; height: 10px; border-radius: 50%; background: #ff5f56; }
+        .mock-header span:nth-child(2) { background: #ffbd2e; }
+        .mock-header span:nth-child(3) { background: #27c93f; }
+        .mock-url { margin-left: 15px; background: #111; color: #888; font-family: monospace; font-size: 11px; padding: 4px 12px; border-radius: 4px; width: 60%; }
+      </style>
+
       <!-- FRONTEND SECTION -->
-      <div class="card dark-card">
+      <div class="card dark-card" style="margin-top: 40px;">
         <h3 class="card-title">🖥 Frontend — Ключові екрани та флоу</h3>
 
         <div class="flows-grid">

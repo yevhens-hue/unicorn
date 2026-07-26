@@ -3,7 +3,7 @@ import { Inbox, Target, CreditCard, RotateCcw, BarChart2, LogOut, Plus, X } from
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import './B2BPortal.css';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API = import.meta.env.VITE_API_URL || 'https://unicorn-pro-api-backend.vercel.app';
 
 // ─── Login Screen ───
 function LoginScreen({ onLogin }) {
@@ -56,7 +56,7 @@ function LoginScreen({ onLogin }) {
 
 // ─── New Campaign Modal ───
 function CampaignModal({ onClose, onCreated, token }) {
-  const [form, setForm] = useState({ name: '', vertical: 'HVAC', zipCodes: 'all', leadType: 'Both', maxBid: 75, dailyLimit: 10 });
+  const [form, setForm] = useState({ name: '', vertical: 'HVAC', zipCodes: 'all', leadType: 'Both', productType: 'Leads', maxBid: 75, dailyLimit: 10 });
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
@@ -99,10 +99,24 @@ function CampaignModal({ onClose, onCreated, token }) {
           <label>Target ZIP Codes (comma separated, or "all")</label>
           <input placeholder="all" value={form.zipCodes} onChange={e => u({ zipCodes: e.target.value })}/>
 
-          <label>Lead Type</label>
-          <select value={form.leadType} onChange={e => u({ leadType: e.target.value })}>
-            <option>Both</option><option>Exclusive</option><option>Shared</option>
-          </select>
+          <div className="modal-row">
+            <div>
+              <label>Product Type</label>
+              <select value={form.productType} onChange={e => u({ productType: e.target.value })}>
+                <option>Leads</option>
+                <option>Live Calls</option>
+                <option>Verified Clicks</option>
+              </select>
+            </div>
+            <div>
+              <label>Lead Type</label>
+              <select value={form.leadType} onChange={e => u({ leadType: e.target.value })}>
+                <option>Both</option><option>Exclusive</option><option>Shared</option>
+              </select>
+            </div>
+          </div>
+
+
 
           <div className="modal-row">
             <div>
@@ -196,6 +210,7 @@ export default function B2BPortal() {
   const [loading, setLoading] = useState(true);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [returnTarget, setReturnTarget] = useState(null);
+  const [billingCycle, setBillingCycle] = useState('Prepaid');
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -361,7 +376,7 @@ export default function B2BPortal() {
                       <div className="camp-status-dot" style={{ background: c.isActive ? '#10b981' : '#555' }}/>
                       <div className="camp-info">
                         <strong>{c.name}</strong>
-                        <span>{c.vertical} · {c.zipCodes} · {c.leadType}</span>
+                        <span>{c.vertical} · {c.zipCodes} · {c.productType || 'Leads'} ({c.leadType})</span>
                       </div>
                       <div className="camp-bid">
                         <strong>${c.maxBid}</strong>
@@ -449,7 +464,26 @@ export default function B2BPortal() {
                     <strong>${Number(balance).toFixed(2)}</strong>
                   </div>
                   <div className="wallet-actions">
-                    <button className="btn-primary" onClick={() => alert('Stripe integration coming soon')}>
+                    <button className="btn-primary" onClick={async () => {
+                      const amount = prompt("Enter amount to add ($):", "100");
+                      if (!amount || isNaN(amount)) return;
+                      try {
+                        const res = await fetch(`${API}/api/billing/topup`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                          body: JSON.stringify({ amount: parseFloat(amount) })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.checkoutUrl) {
+                          alert(`Mock Stripe Checkout URL:\n${data.checkoutUrl}\n\n(In production, you would be redirected here)`);
+                          // Redirect: window.location.href = data.checkoutUrl;
+                        } else {
+                          alert(data.error || 'Failed to initialize top-up');
+                        }
+                      } catch (e) {
+                        alert('Error connecting to billing service');
+                      }
+                    }}>
                       Add Funds
                     </button>
                   </div>
@@ -462,6 +496,28 @@ export default function B2BPortal() {
                     <li>Returns are refunded instantly to your balance within 24h of request</li>
                     <li>Auto-recharge kicks in when balance falls below $50</li>
                   </ul>
+                </div>
+                
+                <div className="billing-cycle-card glass-card" style={{ marginTop: 24 }}>
+                  <h3>⚙️ Billing Settings</h3>
+                  <div style={{ marginTop: 16 }}>
+                    <label style={{ display: 'block', fontSize: 12, color: '#aaa', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Current Billing Cycle</label>
+                    <select 
+                      value={billingCycle} 
+                      onChange={(e) => setBillingCycle(e.target.value)}
+                      style={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 14, width: '100%', maxWidth: 300 }}
+                    >
+                      <option value="Prepaid">Prepaid (Auto-recharge)</option>
+                      <option value="Net-7">Net-7 (Weekly Invoicing)</option>
+                      <option value="Net-15">Net-15 (Semi-Monthly)</option>
+                      <option value="Net-30">Net-30 (Monthly Invoicing)</option>
+                    </select>
+                    <p style={{ marginTop: 12, fontSize: 13, color: '#888', lineHeight: 1.5 }}>
+                      {billingCycle === 'Prepaid' 
+                        ? 'Your wallet will automatically be charged when funds fall below minimum threshold.' 
+                        : `You will receive automated invoices generated by the platform ${billingCycle.includes('7') ? 'every week' : billingCycle.includes('15') ? 'twice a month' : 'once a month'}. Terms apply.`}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

@@ -1,6 +1,8 @@
 const PingPostService = require('../services/PingPostService');
 const CampaignRepository = require('../repositories/CampaignRepository');
 const LeadRepository = require('../repositories/LeadRepository');
+const TwilioService = require('../services/TwilioService');
+const TrustedFormService = require('../services/TrustedFormService');
 
 class LeadController {
   static async submitLead(req, res) {
@@ -11,6 +13,17 @@ class LeadController {
     }
 
     try {
+      // 0. Preliminary Validations
+      const isPhoneValid = await TwilioService.validatePhone(phone);
+      if (!isPhoneValid) {
+        return res.status(400).json({ error: "Invalid phone number format or VoIP detected" });
+      }
+
+      const isTcpaValid = await TrustedFormService.verifyCert(tcpa);
+      if (!isTcpaValid) {
+        return res.status(400).json({ error: "TCPA consent is required and must be validated via TrustedForm" });
+      }
+
       // 1. Fetch matching campaigns via Repository
       const activeCampaigns = await CampaignRepository.getActiveMatchingCampaigns(serviceType, zipCode);
 

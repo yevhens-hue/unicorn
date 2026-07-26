@@ -8,6 +8,8 @@ app.use(cors());
 app.use(express.json());
 
 const LeadController = require('./src/controllers/LeadController');
+const BillingController = require('./src/controllers/BillingController');
+const TelegramAlertService = require('./src/services/TelegramAlertService');
 
 // ---------------------------------------------------------
 // PING-POST ENGINE
@@ -47,6 +49,12 @@ function authMiddleware(req, res, next) {
     res.status(401).json({ error: 'Invalid token' });
   }
 }
+
+// ---------------------------------------------------------
+// BILLING API
+// ---------------------------------------------------------
+app.post('/api/billing/topup', authMiddleware, BillingController.topUp);
+app.post('/api/billing/webhook', BillingController.webhook);
 
 // ---------------------------------------------------------
 // B2B PORTAL API
@@ -329,6 +337,12 @@ if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => {
     console.log(`Unicorn Pro API running on http://localhost:${PORT}`);
+    
+    // Start Telegram Alert Job (every 1 hour)
+    // For demo/testing, running it every 15 seconds:
+    setInterval(() => {
+      TelegramAlertService.checkFillRateAndAlert();
+    }, 15000);
   });
 }
 
