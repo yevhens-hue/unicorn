@@ -109,11 +109,13 @@ export default function AdminPortal() {
                   ))}
                 </div>
 
-                <div className="admin-tip glass-card mt-3" style={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1e40af' }}>
-                  <strong>🚀 Hybrid Transition Strategy Active:</strong>
-                  <ul style={{ margin: '8px 0 0 16px', padding: 0, fontSize: '0.85rem' }}>
-                    <li><strong>Phase 1 (Instant Online Slot Booking):</strong> High-intent homeowners lock in estimate slots online (PPA $220-$300).</li>
-                    <li><strong>Phase 2 (Call Center Qualification):</strong> CPL leads without slots are dispatched to internal agents / AI Voice for confirmation.</li>
+                <div className="admin-tip glass-card mt-3" style={{ background: 'rgba(37, 99, 235, 0.1)', borderColor: 'rgba(37, 99, 235, 0.3)', color: '#93c5fd', borderRadius: '16px', padding: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '1rem', color: '#60a5fa', fontWeight: '700' }}>
+                    🚀 Hybrid Transition Strategy Active:
+                  </div>
+                  <ul style={{ margin: '0 0 0 20px', padding: 0, fontSize: '0.88rem', color: '#cbd5e1', lineHeight: '1.6' }}>
+                    <li><strong style={{ color: '#60a5fa' }}>Phase 1 (Instant Online Slot Booking):</strong> High-intent homeowners lock in estimate slots online (PPA $220-$300).</li>
+                    <li><strong style={{ color: '#60a5fa' }}>Phase 2 (Call Center Qualification):</strong> CPL leads without slots are dispatched to internal agents / AI Voice for confirmation.</li>
                   </ul>
                 </div>
               </div>
