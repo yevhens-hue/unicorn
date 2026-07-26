@@ -398,6 +398,7 @@ export default function B2CFunnel() {
           <button className="btn-secondary" onClick={() => window.location.reload()}>Start New Request</button>
         </motion.div>
       </div>
+      </>
     );
   }
 
