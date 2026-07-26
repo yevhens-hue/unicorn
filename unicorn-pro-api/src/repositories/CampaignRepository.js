@@ -16,8 +16,8 @@ class CampaignRepository {
     return prisma.campaign.findMany({
       where: {
         isActive: true,
-        vertical: vertical,
         OR: [
+          { vertical: vertical },
           { zipCodes: 'all' },
           { zipCodes: { contains: zipCode } }
         ]

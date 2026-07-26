@@ -31,8 +31,8 @@ class PingPostService {
 
     // 1. Filter eligible campaigns
     const eligible = activeCampaigns.filter(c => {
-      // Must match service type (vertical)
-      if (c.vertical !== lead.serviceType) return false;
+      // Must match vertical or serviceType
+      if (c.vertical !== lead.vertical && c.vertical !== lead.serviceType) return false;
       // Must match ZIP (or 'all')
       if (c.zipCodes !== 'all' && !c.zipCodes.includes(lead.zipCode)) return false;
       // Buyer must have enough balance to cover their bid
@@ -45,10 +45,10 @@ class PingPostService {
     }
 
     // 2. Separate Exclusive and Shared, applying quality factor to bids
-    const exclusive = eligible.filter(c => c.leadType === 'Exclusive')
+    const exclusive = eligible.filter(c => c.leadType === 'Exclusive' || c.leadType === 'Both')
       .sort((a, b) => (b.maxBid * qFactor) - (a.maxBid * qFactor));
     
-    const shared = eligible.filter(c => c.leadType === 'Shared')
+    const shared = eligible.filter(c => c.leadType === 'Shared' || c.leadType === 'Both')
       .sort((a, b) => (b.maxBid * qFactor) - (a.maxBid * qFactor));
 
     // 3. Find top exclusive bid
