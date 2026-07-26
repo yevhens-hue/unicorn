@@ -6,7 +6,7 @@ const TrustedFormService = require('../services/TrustedFormService');
 
 class LeadController {
   static async submitLead(req, res) {
-    const { vertical, serviceType, zipCode, propertyType, isOwner, urgency, timeframe, projectScope, name, phone, email, tcpa } = req.body;
+    const { vertical, serviceType, zipCode, propertyType, isOwner, urgency, timeframe, projectScope, name, phone, email, tcpa, leadType, appointmentDate, appointmentTime, appointmentStatus } = req.body;
 
     if (!serviceType || !zipCode || !name || !phone) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -28,7 +28,25 @@ class LeadController {
       const activeCampaigns = await CampaignRepository.getActiveMatchingCampaigns(serviceType, zipCode);
 
       // 2. Delegate to PingPostService
-      const leadData = { vertical, serviceType, zipCode, propertyType, isOwner, urgency, timeframe, projectScope, name, phone, email, tcpa };
+      const leadData = { 
+        vertical, 
+        serviceType, 
+        zipCode, 
+        propertyType, 
+        isOwner, 
+        urgency, 
+        timeframe, 
+        projectScope, 
+        name, 
+        phone, 
+        email, 
+        tcpa,
+        leadType: leadType || (appointmentDate ? 'PPA_ONLINE' : 'CPL'),
+        appointmentDate: appointmentDate || null,
+        appointmentTime: appointmentTime || null,
+        appointmentStatus: appointmentStatus || (appointmentDate ? 'Confirmed' : 'Pending')
+      };
+      
       const auctionResult = PingPostService.processAuction(leadData, activeCampaigns);
 
       // 3. Record Lead & Transactions atomically if sold

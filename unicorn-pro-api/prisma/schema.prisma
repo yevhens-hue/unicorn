@@ -49,6 +49,10 @@ model Lead {
   email        String
   tcpa         Boolean
   status       String         // "Exclusive", "Shared", "Unsold"
+  leadType          String?   @default("CPL") // "CPL", "PPA_ONLINE", "PPA_CALLCENTER"
+  appointmentDate   String?
+  appointmentTime   String?
+  appointmentStatus String?   @default("Pending") // "Pending", "Confirmed", "Sold", "NoShow"
   createdAt    DateTime       @default(now())
   purchases    LeadPurchase[]
 }

@@ -32,6 +32,8 @@ export default function B2CFunnel() {
   const [winners, setWinners] = useState([]);
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchError, setSearchError] = useState('');
+
   
   const [formData, setFormData] = useState({
     zipCode: '',
@@ -45,19 +47,50 @@ export default function B2CFunnel() {
     phone: '',
     email: '',
     tcpa: false,
+    appointmentDate: '',
+    appointmentTime: '',
+    leadType: 'CPL'
   });
 
   const update = (fields) => setFormData(f => ({ ...f, ...fields }));
 
   const handleSearchSubmit = () => {
-    // If they type something, we try to guess vertical or just move to ZIP step
-    let matchedVertical = 'HVAC'; // default
+    setSearchError('');
+    if (!searchQuery.trim()) return;
+
     const q = searchQuery.toLowerCase();
-    if (q.includes('roof')) matchedVertical = 'Roofing';
-    else if (q.includes('window')) matchedVertical = 'Windows';
-    else if (q.includes('solar')) matchedVertical = 'Solar';
     
-    update({ vertical: matchedVertical, serviceType: searchQuery || 'General' });
+    // 1. Keyword mapping
+    const keywords = {
+      HVAC: ['air', 'ac ', 'ac', 'heating', 'cooling', 'furnace', 'hvac', 'vent', 'duct', 'thermostat', 'pump'],
+      Roofing: ['roof', 'shingle', 'gutter', 'leak', 'tile'],
+      Windows: ['window', 'glass', 'pane'],
+      Solar: ['solar', 'panel', 'energy']
+    };
+
+    let matchedVertical = null;
+    let matchedService = '';
+
+    for (const [vert, words] of Object.entries(keywords)) {
+      if (words.some(w => q.includes(w))) {
+        matchedVertical = vert;
+        break;
+      }
+    }
+
+    if (!matchedVertical) {
+      setSearchError("We couldn't match your request. Please select a popular category below.");
+      return;
+    }
+
+    // 2. Try to exact-match a sub-service so we can skip Step 2
+    const servicesForVertical = SERVICES[matchedVertical] || [];
+    const exactMatch = servicesForVertical.find(s => q.includes(s.toLowerCase()));
+    if (exactMatch) {
+      matchedService = exactMatch;
+    }
+
+    update({ vertical: matchedVertical, serviceType: matchedService });
     setStep(1); // Go to ZIP step
   };
 
@@ -66,21 +99,26 @@ export default function B2CFunnel() {
     setStep(1);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (overrideData = {}) => {
     setLoading(true);
+    const finalData = { ...formData, ...overrideData };
     const apiPayload = {
-      vertical: formData.vertical,
-      serviceType: formData.serviceType,
-      zipCode: formData.zipCode,
-      propertyType: formData.propertyType,
-      isOwner: formData.isOwner,
-      urgency: formData.timeframe === 'ASAP' ? 'Emergency' : formData.timeframe,
-      timeframe: formData.timeframe, // new AI field
-      projectScope: 'New Install/Replace', // new AI field (hardcoded or from state)
-      name: formData.name,
-      phone: formData.phone,
-      email: formData.email,
-      tcpa: formData.tcpa
+      vertical: finalData.vertical,
+      serviceType: finalData.serviceType,
+      zipCode: finalData.zipCode,
+      propertyType: finalData.propertyType,
+      isOwner: finalData.isOwner,
+      urgency: finalData.timeframe === 'ASAP' ? 'Emergency' : finalData.timeframe,
+      timeframe: finalData.timeframe,
+      projectScope: 'New Install/Replace',
+      name: finalData.name,
+      phone: finalData.phone,
+      email: finalData.email,
+      tcpa: finalData.tcpa,
+      leadType: finalData.leadType || 'CPL',
+      appointmentDate: finalData.appointmentDate || null,
+      appointmentTime: finalData.appointmentTime || null,
+      appointmentStatus: finalData.appointmentDate ? 'Confirmed' : 'Pending'
     };
 
     try {
@@ -97,7 +135,7 @@ export default function B2CFunnel() {
       }
       
       setWinners(data.winners || []);
-      setStep(6);
+      setStep(7); // Thank You Step
     } catch (err) {
       console.error(err);
       alert('Connection error. Please try again.');
@@ -115,6 +153,17 @@ export default function B2CFunnel() {
   if (step === 0) {
     return (
       <>
+      <header className="b2c-header">
+        <div className="header-logo">
+          <span className="logo-icon">🦄</span>
+          Unicorn Pro
+        </div>
+        <nav className="header-nav">
+          <a href="#">Services</a>
+          <a href="#">How it Works</a>
+          <a href="#" className="login-link">Contractor Login</a>
+        </nav>
+      </header>
       <div className="hero-page-wrapper">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="hero-section-new">
           
@@ -145,6 +194,7 @@ export default function B2CFunnel() {
                 Find Pros
               </button>
             </div>
+            {searchError && <div className="search-error-msg">{searchError}</div>}
             
             <div className="popular-tags">
               <span className="popular-label">Popular:</span>
@@ -274,9 +324,9 @@ export default function B2CFunnel() {
   }
 
   // ----------------------------------------------------
-  // THANK YOU PAGE (Step 6)
+  // THANK YOU PAGE (Step 7)
   // ----------------------------------------------------
-  if (step === 6) {
+  if (step === 7) {
     return (
       <div className="wizard-container">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="thank-you-section wizard-card glass-card">
@@ -347,7 +397,13 @@ export default function B2CFunnel() {
                   />
                 </div>
               </div>
-              <button className="btn-primary btn-submit-huge mt-4" onClick={nextStep} disabled={formData.zipCode.length < 5}>
+              <button className="btn-primary btn-submit-huge mt-4" onClick={() => {
+                if (formData.serviceType) {
+                  setStep(3); // Skip Step 2 because we mapped a service exactly
+                } else {
+                  setStep(2);
+                }
+              }} disabled={formData.zipCode.length < 5}>
                 Next Step
               </button>
               <button className="btn-back" onClick={() => setStep(0)}>← Back</button>
@@ -387,7 +443,13 @@ export default function B2CFunnel() {
                   </button>
                 ))}
               </div>
-              <button className="btn-back" onClick={prevStep}>← Back</button>
+              <button className="btn-back" onClick={() => {
+                if (formData.serviceType && step === 3 && SERVICES[formData.vertical]?.includes(formData.serviceType)) {
+                  setStep(2); // take them to step 2 anyway so they can change the prepopulated service
+                } else {
+                  prevStep();
+                }
+              }}>← Back</button>
             </motion.div>
           )}
 
@@ -432,12 +494,84 @@ export default function B2CFunnel() {
 
               <button
                 className="btn-primary btn-submit-huge"
-                onClick={handleSubmit}
-                disabled={loading || !formData.name || !formData.phone || !formData.email || !formData.tcpa}
+                onClick={() => setStep(6)}
+                disabled={!formData.name || !formData.phone || !formData.email || !formData.tcpa}
               >
-                {loading ? 'Processing...' : 'Get My Free Quotes'}
+                Next: Reserve Free Estimate Slot 📅
               </button>
               <button className="btn-back" onClick={prevStep}>← Back</button>
+            </motion.div>
+          )}
+
+          {/* STEP 6: Phase 1 Instant Slot Booking (PPA) */}
+          {step === 6 && (
+            <motion.div key="step6" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="wizard-step">
+              <div className="ppa-badge-header">⚡ Phase 1: Instant Appointment Booking</div>
+              <h2>Select a date & time for your free in-home estimate:</h2>
+              <p className="wizard-sub" style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '20px' }}>
+                Skip the phone call queue! Homeowners who lock in a slot receive guaranteed $250 priority scheduling.
+              </p>
+
+              <div className="slot-selection-container">
+                <label className="slot-label">Select Date:</label>
+                <div className="wizard-grid-3col mb-4">
+                  {[
+                    { day: 'Tomorrow', date: 'Jul 28' },
+                    { day: 'Wednesday', date: 'Jul 29' },
+                    { day: 'Thursday', date: 'Jul 30' }
+                  ].map(d => {
+                    const dateStr = `${d.day}, ${d.date}`;
+                    const isSelected = formData.appointmentDate === dateStr;
+                    return (
+                      <button
+                        key={d.date}
+                        className={`wizard-option-btn ${isSelected ? 'selected' : ''}`}
+                        onClick={() => update({ appointmentDate: dateStr })}
+                      >
+                        <strong>{d.day}</strong>
+                        <span>{d.date}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <label className="slot-label">Select Time Window:</label>
+                <div className="wizard-grid-3col mb-4">
+                  {['9:00 AM - 11:00 AM', '1:00 PM - 3:00 PM', '4:00 PM - 6:00 PM'].map(t => {
+                    const isSelected = formData.appointmentTime === t;
+                    return (
+                      <button
+                        key={t}
+                        className={`wizard-option-btn ${isSelected ? 'selected' : ''}`}
+                        onClick={() => update({ appointmentTime: t })}
+                      >
+                        <strong>{t}</strong>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                className="btn-primary btn-submit-huge mt-4"
+                onClick={() => handleSubmit({ leadType: 'PPA_ONLINE', appointmentStatus: 'Confirmed' })}
+                disabled={loading || !formData.appointmentDate || !formData.appointmentTime}
+              >
+                {loading ? 'Confirming Slot...' : '📅 Confirm Priority Appointment Slot'}
+              </button>
+
+              <div className="or-divider mt-3 text-center" style={{ color: '#94a3b8', fontSize: '0.85rem' }}>or</div>
+
+              <button
+                className="btn-secondary btn-skip-ppa mt-2"
+                onClick={() => handleSubmit({ leadType: 'CPL', appointmentDate: '', appointmentTime: '', appointmentStatus: 'Pending' })}
+                disabled={loading}
+                style={{ width: '100%', padding: '12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#475569', fontWeight: '600', cursor: 'pointer' }}
+              >
+                📞 Skip & Have a Pro Call Me to Schedule (CPL Flow)
+              </button>
+
+              <button className="btn-back mt-3" onClick={() => setStep(5)}>← Back</button>
             </motion.div>
           )}
         </AnimatePresence>

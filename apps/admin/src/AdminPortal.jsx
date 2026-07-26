@@ -92,13 +92,14 @@ export default function AdminPortal() {
             {/* KPI DASHBOARD */}
             {activeTab === 'kpi' && kpi && (
               <div className="kpi-section">
-                <h2>Platform Overview</h2>
+                <h2>Platform Overview (CPL + PPA Hybrid Model)</h2>
                 <div className="admin-kpi-grid">
                   {[
-                    { label: 'Total Leads', value: kpi.totalLeads, color: '#7c3aed' },
+                    { label: 'Total Inquiries', value: kpi.totalLeads, color: '#7c3aed' },
                     { label: 'Platform Revenue', value: `$${kpi.totalRevenue}`, color: '#10b981' },
                     { label: 'Fill Rate', value: `${kpi.fillRate}%`, color: '#3b82f6' },
-                    { label: 'Avg CPL', value: `$${kpi.avgCPL}`, color: '#f59e0b' },
+                    { label: 'Avg Lead Price', value: `$${kpi.avgCPL}`, color: '#f59e0b' },
+                    { label: 'PPA Appointments', value: leads.filter(l => l.leadType === 'PPA_ONLINE' || l.appointmentDate).length, color: '#2563eb' },
                     { label: 'Unsold Leads', value: kpi.unsoldLeads, color: '#ef4444' },
                   ].map(k => (
                     <div key={k.label} className="admin-kpi-card glass-card">
@@ -108,9 +109,12 @@ export default function AdminPortal() {
                   ))}
                 </div>
 
-                <div className="admin-tip glass-card">
-                  <AlertTriangle size={16} color="#f59e0b"/>
-                  <span>Fill rate below 70%? Check if campaigns have enough ZIP coverage and bid amounts are competitive.</span>
+                <div className="admin-tip glass-card mt-3" style={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1e40af' }}>
+                  <strong>🚀 Hybrid Transition Strategy Active:</strong>
+                  <ul style={{ margin: '8px 0 0 16px', padding: 0, fontSize: '0.85rem' }}>
+                    <li><strong>Phase 1 (Instant Online Slot Booking):</strong> High-intent homeowners lock in estimate slots online (PPA $220-$300).</li>
+                    <li><strong>Phase 2 (Call Center Qualification):</strong> CPL leads without slots are dispatched to internal agents / AI Voice for confirmation.</li>
+                  </ul>
                 </div>
               </div>
             )}
@@ -119,7 +123,7 @@ export default function AdminPortal() {
             {activeTab === 'leads' && (
               <div className="leads-section">
                 <div className="section-header">
-                  <h2>All Leads</h2>
+                  <h2>All Leads & Appointments</h2>
                   <div className="filters">
                     <select value={leadsFilter.status} onChange={e => setLeadsFilter(f => ({ ...f, status: e.target.value }))}>
                       <option value="">All Statuses</option>
@@ -138,12 +142,12 @@ export default function AdminPortal() {
                     <thead>
                       <tr>
                         <th>ID</th><th>Name</th><th>Service</th><th>ZIP</th>
-                        <th>Status</th><th>Timeframe</th><th>Scope</th><th>Urgency</th><th>Buyers</th><th>Date</th>
+                        <th>Model / Type</th><th>Appointment Slot</th><th>Status</th><th>Buyers</th><th>Date</th>
                       </tr>
                     </thead>
                     <tbody>
                       {leads.length === 0 && (
-                        <tr><td colSpan={8} style={{textAlign:'center',color:'#666',padding:32}}>No leads yet</td></tr>
+                        <tr><td colSpan={9} style={{textAlign:'center',color:'#666',padding:32}}>No leads yet</td></tr>
                       )}
                       {leads.map(l => (
                         <tr key={l.id}>
@@ -151,10 +155,19 @@ export default function AdminPortal() {
                           <td><strong>{l.name}</strong></td>
                           <td>{l.vertical ? `${l.vertical} - ` : ''}{l.serviceType}</td>
                           <td>{l.zipCode}</td>
+                          <td>
+                            <span className={`status-pill ${l.leadType === 'PPA_ONLINE' ? 'status-active' : 'status-unsold'}`} style={{ fontWeight: 600 }}>
+                              {l.leadType === 'PPA_ONLINE' ? '⚡ PPA ($250)' : '📞 CPL ($50)'}
+                            </span>
+                          </td>
+                          <td>
+                            {l.appointmentDate ? (
+                              <strong style={{ color: '#2563eb', fontSize: '0.85rem' }}>📅 {l.appointmentDate} @ {l.appointmentTime}</strong>
+                            ) : (
+                              <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Pending Call Center</span>
+                            )}
+                          </td>
                           <td><span className={`status-pill status-${l.status.toLowerCase()}`}>{l.status}</span></td>
-                          <td>{l.timeframe || '-'}</td>
-                          <td>{l.projectScope || '-'}</td>
-                          <td>{l.urgency}</td>
                           <td>{l.purchases?.length || 0}</td>
                           <td>{new Date(l.createdAt).toLocaleDateString()}</td>
                         </tr>
