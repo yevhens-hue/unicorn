@@ -34,6 +34,28 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Register a new buyer account
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { name, email, password, company } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+    const existing = await prisma.buyer.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(409).json({ error: 'Email already registered' });
+    }
+    const buyer = await prisma.buyer.create({
+      data: { name, email, password, balance: 0 }
+    });
+    const token = Buffer.from(`${buyer.id}:${buyer.email}`).toString('base64');
+    res.status(201).json({ token, buyer: { id: buyer.id, name: buyer.name, email: buyer.email, balance: buyer.balance } });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
 // Auth middleware
 function authMiddleware(req, res, next) {
   const auth = req.headers.authorization;
