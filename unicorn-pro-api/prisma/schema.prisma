@@ -3,17 +3,20 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Buyer {
-  id        Int            @id @default(autoincrement())
-  name      String
-  balance   Float          @default(0)
-  createdAt DateTime       @default(now())
-  campaigns Campaign[]
-  purchases LeadPurchase[]
+  id          Int            @id @default(autoincrement())
+  name        String
+  email       String         @unique
+  password    String
+  balance     Float          @default(0)
+  isFrozen    Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  campaigns   Campaign[]
+  purchases   LeadPurchase[]
 }
 
 model Campaign {
@@ -21,8 +24,8 @@ model Campaign {
   buyerId    Int
   buyer      Buyer    @relation(fields: [buyerId], references: [id])
   name       String
-  vertical   String   // e.g. HVAC
-  zipCodes   String   // comma separated
+  vertical   String   // e.g. HVAC, Roofing, Windows, Solar
+  zipCodes   String   // comma separated, or "all"
   leadType   String   // "Exclusive", "Shared", "Both"
   maxBid     Float
   isActive   Boolean  @default(true)
@@ -47,12 +50,13 @@ model Lead {
 }
 
 model LeadPurchase {
-  id        Int      @id @default(autoincrement())
-  leadId    Int
-  buyerId   Int
-  price     Float
-  status    String   @default("active") // "active", "returned"
-  lead      Lead     @relation(fields: [leadId], references: [id])
-  buyer     Buyer    @relation(fields: [buyerId], references: [id])
-  createdAt DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  leadId       Int
+  buyerId      Int
+  price        Float
+  status       String   @default("active") // "active", "returned"
+  returnReason String?
+  lead         Lead     @relation(fields: [leadId], references: [id])
+  buyer        Buyer    @relation(fields: [buyerId], references: [id])
+  createdAt    DateTime @default(now())
 }

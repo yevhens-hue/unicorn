@@ -1,120 +1,341 @@
 import React, { useState, useEffect } from 'react';
-import { Inbox, Target, CreditCard, RotateCcw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Inbox, Target, CreditCard, RotateCcw, BarChart2, LogOut, Plus, X } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import './B2BPortal.css';
 
-export default function B2BPortal() {
-  const [activeTab, setActiveTab] = useState('inbox');
-  const [leads, setLeads] = useState([]);
-  const [campaigns, setCampaigns] = useState([]);
-  const [balance, setBalance] = useState(0);
-  const [loading, setLoading] = useState(true);
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-  const fetchData = async () => {
+// ─── Login Screen ───
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = useState('demo@hvacmasters.com');
+  const [password, setPassword] = useState('demo1234');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
     setLoading(true);
+    setError('');
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const [leadsRes, campaignsRes, balanceRes] = await Promise.all([
-        fetch(`${apiUrl}/api/leads/inbox`),
-        fetch(`${apiUrl}/api/campaigns`),
-        fetch(`${apiUrl}/api/buyers/balance`)
-      ]);
-      const leadsData = await leadsRes.json();
-      const campaignsData = await campaignsRes.json();
-      const balanceData = await balanceRes.json();
-
-      setLeads(leadsData);
-      setCampaigns(campaignsData);
-      setBalance(balanceData.balance);
+      const res = await fetch(`${API}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+      localStorage.setItem('unicorn_token', data.token);
+      localStorage.setItem('unicorn_buyer', JSON.stringify(data.buyer));
+      onLogin(data.token, data.buyer);
     } catch (err) {
-      console.error("Failed to fetch portal data", err);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const toggleCampaign = async (id) => {
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      await fetch(`${apiUrl}/api/campaigns/${id}/toggle`, { method: 'POST' });
-      fetchData();
-    } catch (err) {
-      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="portal-layout animate-slide-up">
+    <div className="login-screen">
+      <div className="login-card glass-card">
+        <div className="login-logo">⚡ Unicorn Pro</div>
+        <h2>Contractor Portal</h2>
+        <p className="login-sub">Sign in to manage your leads and campaigns</p>
+        <form onSubmit={handleLogin} className="login-form">
+          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required/>
+          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required/>
+          {error && <div className="login-error">{error}</div>}
+          <button type="submit" className="btn-primary w-full" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In →'}
+          </button>
+        </form>
+        <p className="login-demo">Demo: demo@hvacmasters.com / demo1234</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── New Campaign Modal ───
+function CampaignModal({ onClose, onCreated, token }) {
+  const [form, setForm] = useState({ name: '', vertical: 'HVAC', zipCodes: 'all', leadType: 'Both', maxBid: 75, dailyLimit: 10 });
+  const [loading, setLoading] = useState(false);
+
+  const handleCreate = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/campaigns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      onCreated(data);
+      onClose();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const u = (f) => setForm(p => ({ ...p, ...f }));
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card glass-card" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>New Campaign</h3>
+          <button className="modal-close" onClick={onClose}><X size={18}/></button>
+        </div>
+        <div className="modal-body">
+          <label>Campaign Name</label>
+          <input placeholder="e.g. Miami HVAC Emergency" value={form.name} onChange={e => u({ name: e.target.value })}/>
+
+          <label>Vertical</label>
+          <select value={form.vertical} onChange={e => u({ vertical: e.target.value })}>
+            {['HVAC','Roofing','Windows','Solar'].map(v => <option key={v}>{v}</option>)}
+          </select>
+
+          <label>Target ZIP Codes (comma separated, or "all")</label>
+          <input placeholder="all" value={form.zipCodes} onChange={e => u({ zipCodes: e.target.value })}/>
+
+          <label>Lead Type</label>
+          <select value={form.leadType} onChange={e => u({ leadType: e.target.value })}>
+            <option>Both</option><option>Exclusive</option><option>Shared</option>
+          </select>
+
+          <div className="modal-row">
+            <div>
+              <label>Max Bid ($)</label>
+              <input type="number" value={form.maxBid} onChange={e => u({ maxBid: parseFloat(e.target.value) })} min={5} max={500}/>
+            </div>
+            <div>
+              <label>Daily Limit</label>
+              <input type="number" value={form.dailyLimit} onChange={e => u({ dailyLimit: parseInt(e.target.value) })} min={1} max={100}/>
+            </div>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={handleCreate} disabled={loading || !form.name}>
+            {loading ? 'Creating...' : 'Create Campaign'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Return Lead Modal ───
+function ReturnModal({ purchase, onClose, onReturned, token }) {
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleReturn = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/leads/${purchase.purchaseId}/return`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reason }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      onReturned(data.refunded);
+      onClose();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card glass-card" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Return Lead: {purchase.name}</h3>
+          <button className="modal-close" onClick={onClose}><X size={18}/></button>
+        </div>
+        <div className="modal-body">
+          <p style={{color:'#888',marginBottom:16}}>You will receive a refund of <strong style={{color:'#10b981'}}>${purchase.price}</strong></p>
+          <label>Reason for return</label>
+          <select value={reason} onChange={e => setReason(e.target.value)}>
+            <option value="">Select reason...</option>
+            <option>Wrong contact info</option>
+            <option>Already hired someone</option>
+            <option>Outside service area</option>
+            <option>Lead quality issue</option>
+            <option>Duplicate lead</option>
+          </select>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={handleReturn} disabled={loading || !reason}>
+            {loading ? 'Processing...' : 'Confirm Return'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Portal ───
+export default function B2BPortal() {
+  const [token, setToken] = useState(() => localStorage.getItem('unicorn_token'));
+  const [buyer, setBuyer] = useState(() => {
+    const s = localStorage.getItem('unicorn_buyer');
+    return s ? JSON.parse(s) : null;
+  });
+
+  const [activeTab, setActiveTab] = useState('inbox');
+  const [leads, setLeads] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [balance, setBalance] = useState(0);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [returnTarget, setReturnTarget] = useState(null);
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const fetchData = async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const [leadsRes, campRes, balRes] = await Promise.all([
+        fetch(`${API}/api/leads/inbox`, { headers }),
+        fetch(`${API}/api/campaigns`, { headers }),
+        fetch(`${API}/api/buyers/balance`, { headers }),
+      ]);
+      if (leadsRes.status === 401) { handleLogout(); return; }
+      setLeads(await leadsRes.json());
+      setCampaigns(await campRes.json());
+      const b = await balRes.json();
+      setBalance(b.balance ?? 0);
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const fetchAnalytics = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API}/api/analytics`, { headers });
+      setAnalytics(await res.json());
+    } catch (err) { console.error(err); }
+  };
+
+  useEffect(() => { fetchData(); }, [token]);
+  useEffect(() => { if (activeTab === 'analytics') fetchAnalytics(); }, [activeTab]);
+
+  const handleLogin = (t, b) => { setToken(t); setBuyer(b); };
+  const handleLogout = () => {
+    localStorage.removeItem('unicorn_token');
+    localStorage.removeItem('unicorn_buyer');
+    setToken(null); setBuyer(null);
+  };
+
+  const toggleCampaign = async (id) => {
+    try {
+      await fetch(`${API}/api/campaigns/${id}/toggle`, { method: 'POST', headers });
+      fetchData();
+    } catch (err) { console.error(err); }
+  };
+
+  if (!token || !buyer) return <LoginScreen onLogin={handleLogin}/>;
+
+  return (
+    <div className="portal-layout">
+      {showCampaignModal && (
+        <CampaignModal
+          token={token}
+          onClose={() => setShowCampaignModal(false)}
+          onCreated={() => fetchData()}
+        />
+      )}
+      {returnTarget && (
+        <ReturnModal
+          purchase={returnTarget}
+          token={token}
+          onClose={() => setReturnTarget(null)}
+          onReturned={(refunded) => { setBalance(b => b + refunded); fetchData(); }}
+        />
+      )}
+
       {/* Sidebar */}
       <aside className="portal-sidebar glass-card">
         <div className="contractor-profile">
-          <div className="avatar">HV</div>
+          <div className="avatar">{buyer.name?.[0] || 'P'}</div>
           <div>
-            <strong>HVAC Masters LLC</strong>
-            <div className="balance"><CreditCard size={12}/> Balance: ${balance.toFixed(2)}</div>
+            <strong>{buyer.name}</strong>
+            <div className="balance"><CreditCard size={12}/> ${Number(balance).toFixed(2)}</div>
           </div>
         </div>
-        
         <nav className="portal-nav">
-          <button className={activeTab === 'inbox' ? 'active' : ''} onClick={() => { setActiveTab('inbox'); fetchData(); }}>
-            <Inbox size={18} /> Lead Inbox <span className="badge">{leads.length}</span>
-          </button>
-          <button className={activeTab === 'campaigns' ? 'active' : ''} onClick={() => setActiveTab('campaigns')}>
-            <Target size={18} /> Campaigns
-          </button>
-          <button className={activeTab === 'billing' ? 'active' : ''} onClick={() => setActiveTab('billing')}>
-            <CreditCard size={18} /> Wallet & Billing
-          </button>
+          {[
+            { id: 'inbox', icon: Inbox, label: 'Lead Inbox', badge: leads.filter(l => l.returnStatus === 'active').length },
+            { id: 'campaigns', icon: Target, label: 'Campaigns', badge: campaigns.filter(c => c.isActive).length },
+            { id: 'analytics', icon: BarChart2, label: 'Analytics' },
+            { id: 'billing', icon: CreditCard, label: 'Billing' },
+          ].map(({ id, icon: Icon, label, badge }) => (
+            <button key={id} className={activeTab === id ? 'active' : ''} onClick={() => setActiveTab(id)}>
+              <Icon size={17}/> {label}
+              {badge > 0 && <span className="badge">{badge}</span>}
+            </button>
+          ))}
         </nav>
+        <button className="logout-btn" onClick={handleLogout}><LogOut size={14}/> Sign Out</button>
       </aside>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="portal-main">
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>Loading data...</div>
+          <div className="portal-loading">
+            <div className="spinner"/>
+            <p>Loading data…</p>
+          </div>
         ) : (
           <>
+            {/* INBOX */}
             {activeTab === 'inbox' && (
               <div className="inbox-view">
                 <header className="view-header">
                   <h2>Lead Inbox</h2>
-                  <div className="status-indicator">
-                    <span className="dot online"></span> Receiving Leads
-                  </div>
+                  <div className="status-indicator"><span className="dot online"/>&nbsp;Receiving Leads</div>
                 </header>
-                
+                {leads.length === 0 && (
+                  <div className="empty-state">
+                    <p>📭 No leads yet. Submit a lead through the B2C funnel to test the auction!</p>
+                  </div>
+                )}
                 <div className="leads-list">
-                  {leads.length === 0 && <p style={{color: '#a0a0a0'}}>No leads purchased yet. Run the B2C funnel to buy leads!</p>}
                   {leads.map(lead => (
-                    <div key={lead.purchaseId} className="lead-card glass-card">
+                    <div key={lead.purchaseId} className={`lead-card glass-card ${lead.returnStatus === 'returned' ? 'returned' : ''}`}>
                       <div className="lead-header">
                         <div className="lead-tags">
                           <span className={`tag ${lead.status === 'Exclusive' ? 'tag-primary' : 'tag-secondary'}`}>
                             {lead.status === 'Exclusive' ? '🎯 Exclusive' : '👥 Shared'}
                           </span>
                           {lead.urgency === 'Emergency' && <span className="tag tag-danger">🚨 Emergency</span>}
+                          {lead.returnStatus === 'returned' && <span className="tag tag-muted">↩ Returned</span>}
                         </div>
                         <div className="lead-time">{new Date(lead.time).toLocaleString()}</div>
                       </div>
-                      
                       <div className="lead-body">
                         <h3>{lead.name}</h3>
                         <div className="lead-details">
                           <span><strong>Service:</strong> {lead.type}</span>
-                          <span><strong>Location:</strong> ZIP {lead.zip}</span>
-                          <span><strong>Cost:</strong> ${lead.price} (deducted)</span>
+                          <span><strong>ZIP:</strong> {lead.zip}</span>
+                          <span><strong>Cost:</strong> ${lead.price}</span>
                         </div>
                       </div>
-                      
                       <div className="lead-footer">
-                        <div style={{fontSize: '14px', color: '#ccc'}}>
-                          📞 {lead.phone} | ✉️ {lead.email}
-                        </div>
-                        <button className="btn-return">
-                          <RotateCcw size={14} /> Request Return
-                        </button>
+                        <div className="lead-contact">📞 {lead.phone} &nbsp;·&nbsp; ✉️ {lead.email}</div>
+                        {lead.returnStatus !== 'returned' && (
+                          <button className="btn-return" onClick={() => setReturnTarget(lead)}>
+                            <RotateCcw size={13}/> Return
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -122,48 +343,126 @@ export default function B2BPortal() {
               </div>
             )}
 
+            {/* CAMPAIGNS */}
             {activeTab === 'campaigns' && (
-              <div className="campaigns-view glass-card">
+              <div className="campaigns-view">
                 <header className="view-header">
-                  <h2>Active Campaigns</h2>
-                  <button className="btn-primary">+ New Campaign</button>
+                  <h2>Campaigns</h2>
+                  <button className="btn-primary" onClick={() => setShowCampaignModal(true)}>
+                    <Plus size={16}/> New Campaign
+                  </button>
                 </header>
-                <div className="campaign-list">
-                  {campaigns.map(camp => (
-                    <div key={camp.id} className="campaign-row" style={{ opacity: camp.isActive ? 1 : 0.6 }}>
+                {campaigns.length === 0 && (
+                  <div className="empty-state">📢 No campaigns yet. Create one to start receiving leads!</div>
+                )}
+                <div className="campaign-list glass-card">
+                  {campaigns.map(c => (
+                    <div key={c.id} className={`campaign-row ${!c.isActive ? 'paused' : ''}`}>
+                      <div className="camp-status-dot" style={{ background: c.isActive ? '#10b981' : '#555' }}/>
                       <div className="camp-info">
-                        <strong>{camp.name}</strong>
-                        <span>Target: {camp.zipCodes} | {camp.leadType}</span>
+                        <strong>{c.name}</strong>
+                        <span>{c.vertical} · {c.zipCodes} · {c.leadType}</span>
                       </div>
                       <div className="camp-bid">
-                        <strong>Max Bid: ${camp.maxBid}</strong>
+                        <strong>${c.maxBid}</strong>
+                        <span>max bid</span>
                       </div>
-                      <div className="camp-status">
-                        <button 
-                          className="btn-secondary" 
-                          style={{ padding: '6px 12px', fontSize: '12px' }}
-                          onClick={() => toggleCampaign(camp.id)}
-                        >
-                          {camp.isActive ? 'Pause' : 'Activate'}
-                        </button>
+                      <div className="camp-limit">
+                        <strong>{c.dailyLimit}</strong>
+                        <span>daily limit</span>
                       </div>
+                      <button className={`btn-toggle ${c.isActive ? 'active' : ''}`} onClick={() => toggleCampaign(c.id)}>
+                        {c.isActive ? 'Pause' : 'Activate'}
+                      </button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
+            {/* ANALYTICS */}
+            {activeTab === 'analytics' && (
+              <div className="analytics-view">
+                <header className="view-header"><h2>Analytics</h2></header>
+                {!analytics ? (
+                  <div className="empty-state">Loading analytics...</div>
+                ) : (
+                  <>
+                    <div className="kpi-grid">
+                      {[
+                        { label: 'Total Leads', value: analytics.totalLeads },
+                        { label: 'Total Spend', value: `$${analytics.totalSpend}` },
+                        { label: 'Return Rate', value: `${analytics.returnRate}%` },
+                      ].map(k => (
+                        <div key={k.label} className="kpi-card glass-card">
+                          <div className="kpi-value">{k.value}</div>
+                          <div className="kpi-label">{k.label}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {analytics.byDay.length > 0 && (
+                      <div className="chart-card glass-card">
+                        <h3>Leads by Day</h3>
+                        <ResponsiveContainer width="100%" height={220}>
+                          <LineChart data={analytics.byDay}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                            <XAxis dataKey="date" stroke="#555" fontSize={11}/>
+                            <YAxis stroke="#555" fontSize={11}/>
+                            <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', borderRadius: 8 }}/>
+                            <Line type="monotone" dataKey="count" stroke="#7c3aed" strokeWidth={2} dot={{ fill: '#7c3aed' }}/>
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {analytics.byVertical.length > 0 && (
+                      <div className="chart-card glass-card">
+                        <h3>Spend by Service Type</h3>
+                        <ResponsiveContainer width="100%" height={200}>
+                          <BarChart data={analytics.byVertical}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                            <XAxis dataKey="name" stroke="#555" fontSize={11}/>
+                            <YAxis stroke="#555" fontSize={11}/>
+                            <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', borderRadius: 8 }} formatter={(v) => `$${v}`}/>
+                            <Bar dataKey="spend" fill="#3b82f6" radius={[4,4,0,0]}/>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {analytics.byDay.length === 0 && (
+                      <div className="empty-state">📊 No data yet. Submit leads through the B2C funnel to see analytics!</div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* BILLING */}
             {activeTab === 'billing' && (
-              <div className="billing-view glass-card">
-                <h2>Wallet & Billing</h2>
-                <div className="wallet-card">
+              <div className="billing-view">
+                <header className="view-header"><h2>Wallet & Billing</h2></header>
+                <div className="wallet-card glass-card">
                   <div className="wallet-bal">
                     <span>Current Balance</span>
-                    <strong>${balance.toFixed(2)}</strong>
+                    <strong>${Number(balance).toFixed(2)}</strong>
                   </div>
-                  <button className="btn-primary">Add Funds</button>
+                  <div className="wallet-actions">
+                    <button className="btn-primary" onClick={() => alert('Stripe integration coming soon')}>
+                      Add Funds
+                    </button>
+                  </div>
                 </div>
-                <p className="hint">Auto-recharge is enabled when balance falls below $100.</p>
+                <div className="billing-info glass-card">
+                  <h3>💡 How billing works</h3>
+                  <ul>
+                    <li>Leads are charged at auction close — you only pay when matched</li>
+                    <li>Exclusive leads: your max bid. Shared leads: 60% of your max bid</li>
+                    <li>Returns are refunded instantly to your balance within 24h of request</li>
+                    <li>Auto-recharge kicks in when balance falls below $50</li>
+                  </ul>
+                </div>
               </div>
             )}
           </>
