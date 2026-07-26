@@ -194,6 +194,19 @@ export default function B2CFunnel() {
     </header>
   );
 
+  const getNextDays = () => {
+    const days = [];
+    const today = new Date();
+    for (let i = 1; i <= 3; i++) {
+      const nextDate = new Date(today);
+      nextDate.setDate(today.getDate() + i);
+      const dayName = i === 1 ? 'Tomorrow' : nextDate.toLocaleDateString('en-US', { weekday: 'short' });
+      const dateStr = nextDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      days.push({ day: dayName, date: dateStr });
+    }
+    return days;
+  };
+
   // ----------------------------------------------------
   // HERO PAGE (Step 0) - Matches Screenshot EXACTLY
   // ----------------------------------------------------
@@ -557,16 +570,13 @@ export default function B2CFunnel() {
               <div className="slot-selection-container">
                 <label className="slot-label">Select Date:</label>
                 <div className="wizard-grid-3col mb-4">
-                  {[
-                    { day: 'Tomorrow', date: 'Jul 28' },
-                    { day: 'Wednesday', date: 'Jul 29' },
-                    { day: 'Thursday', date: 'Jul 30' }
-                  ].map(d => {
+                  {getNextDays().map(d => {
                     const dateStr = `${d.day}, ${d.date}`;
                     const isSelected = formData.appointmentDate === dateStr;
                     return (
                       <button
                         key={d.date}
+                        type="button"
                         className={`wizard-option-btn ${isSelected ? 'selected' : ''}`}
                         onClick={() => update({ appointmentDate: dateStr })}
                       >
