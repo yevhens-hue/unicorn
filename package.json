@@ -4,7 +4,8 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "unicorn-pro-api"
+    "unicorn-pro-api",
+    "unicorn-pro"
   ],
   "scripts": {
     "build": "turbo run build",
