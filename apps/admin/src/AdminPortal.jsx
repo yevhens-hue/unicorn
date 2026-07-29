@@ -66,12 +66,7 @@ export default function AdminPortal() {
     fetchBuyers();
   };
 
-  const handleExportCSV = () => {
-    if (leads.length === 0) {
-      alert('No leads data to export.');
-      return;
-    }
-
+  const getExportData = () => {
     const csvHeaders = [
       'lead_id', 'created_at', 'vertical', 'service_type', 'zip_code',
       'urgency', 'status', 'buyer', 'sold_price', 'return_reason',
@@ -87,31 +82,49 @@ export default function AdminPortal() {
       const returnReason = primaryPurchase ? (primaryPurchase.returnReason || '') : (l.returnReason || '');
 
       return [
-        `"L${String(l.id).padStart(6, '0')}"`,
-        `"${new Date(l.createdAt || Date.now()).toISOString()}"`,
-        `"${l.vertical || l.serviceType || ''}"`,
-        `"${l.serviceType || ''}"`,
-        `"${l.zipCode || ''}"`,
-        `"${l.urgency || 'Standard'}"`,
-        `"${l.status || 'Sold'}"`,
-        `"${buyerName}"`,
+        `L${String(l.id).padStart(6, '0')}`,
+        new Date(l.createdAt || Date.now()).toISOString().replace('T', ' ').slice(0, 19),
+        l.vertical || l.serviceType || '',
+        l.serviceType || '',
+        l.zipCode || '',
+        l.urgency || 'Standard',
+        l.status || 'Sold',
+        buyerName,
         Number(soldPrice).toFixed(2),
-        `"${returnReason}"`,
-        `"${l.leadType || 'CPL'}"`,
-        `"${l.appointmentDate || ''}"`,
-        `"${l.appointmentTime || ''}"`
-      ].join(',');
+        returnReason,
+        l.leadType || 'CPL',
+        l.appointmentDate || '',
+        l.appointmentTime || ''
+      ];
     });
 
-    const csvString = [csvHeaders.join(','), ...rows].join('\n');
+    return { csvHeaders, rows };
+  };
+
+  const handleExportExcel = () => {
+    if (leads.length === 0) { alert('No leads data to export.'); return; }
+    const { csvHeaders, rows } = getExportData();
+    const formattedRows = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','));
+    // Prepend UTF-8 BOM so Excel opens with automatic column splitting
+    const csvString = '\uFEFF' + [csvHeaders.join(','), ...formattedRows].join('\n');
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `unicorn_leads_export_${Date.now()}.csv`);
+    link.setAttribute('download', `unicorn_leads_excel_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleCopyGoogleSheets = () => {
+    if (leads.length === 0) { alert('No leads data to copy.'); return; }
+    const { csvHeaders, rows } = getExportData();
+    const tsvString = [csvHeaders.join('\t'), ...rows.map(r => r.join('\t'))].join('\n');
+    navigator.clipboard.writeText(tsvString);
+    if (window.confirm('✅ Скопировано в буфер обмена!\n\nОткрыть пустую таблицу Google Sheets для вставки (Cmd+V / Ctrl+V)?')) {
+      window.open('https://sheets.new', '_blank');
+    }
   };
 
   return (
@@ -132,8 +145,11 @@ export default function AdminPortal() {
           ))}
         </nav>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn-export" style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleExportCSV}>
-            📥 Export CSV
+          <button className="btn-export" style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleExportExcel} title="Export for Microsoft Excel">
+            📊 Excel (.csv)
+          </button>
+          <button className="btn-export" style={{ background: '#059669', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleCopyGoogleSheets} title="Copy data formatted for Google Sheets">
+            🟢 Google Sheets
           </button>
           <button className="btn-refresh" onClick={fetchAll}>↻ Refresh</button>
         </div>

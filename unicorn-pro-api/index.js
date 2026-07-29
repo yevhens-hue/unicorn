@@ -368,7 +368,8 @@ app.get('/api/admin/leads/export', adminMiddleware, async (req, res) => {
       ].join(',');
     });
 
-    const csvContent = [csvHeaders.join(','), ...rows].join('\n');
+    // Add UTF-8 BOM so Excel & Google Sheets automatically detect encoding & columns
+    const csvContent = '\uFEFF' + [csvHeaders.join(','), ...rows].join('\n');
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename=unicorn_leads_export_${Date.now()}.csv`);

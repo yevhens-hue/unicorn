@@ -320,36 +320,65 @@ export default function B2BPortal() {
                     <div className="status-indicator"><span className="dot online"/>&nbsp;Receiving Leads</div>
                   </div>
                   {leads.length > 0 && (
-                    <button
-                      onClick={() => {
-                        const csvHeaders = ['purchase_id', 'lead_id', 'name', 'phone', 'email', 'service', 'zip', 'urgency', 'status', 'cost', 'date'];
-                        const rows = leads.map(l => [
-                          `"${l.purchaseId || ''}"`,
-                          `"L${String(l.id).padStart(6, '0')}"`,
-                          `"${l.name || ''}"`,
-                          `"${l.phone || ''}"`,
-                          `"${l.email || ''}"`,
-                          `"${l.vertical ? l.vertical + ' - ' : ''}${l.type || ''}"`,
-                          `"${l.zip || ''}"`,
-                          `"${l.urgency || 'Standard'}"`,
-                          `"${l.status || 'Sold'}"`,
-                          Number(l.price || 0).toFixed(2),
-                          `"${new Date(l.time || Date.now()).toISOString()}"`
-                        ].join(','));
-                        const csvString = [csvHeaders.join(','), ...rows].join('\n');
-                        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.setAttribute('download', `b2b_inbox_export_${Date.now()}.csv`);
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                      style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                    >
-                      📥 Export CSV
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => {
+                          const csvHeaders = ['purchase_id', 'lead_id', 'name', 'phone', 'email', 'service', 'zip', 'urgency', 'status', 'cost', 'date'];
+                          const rows = leads.map(l => [
+                            `"${l.purchaseId || ''}"`,
+                            `"L${String(l.id).padStart(6, '0')}"`,
+                            `"${l.name || ''}"`,
+                            `"${l.phone || ''}"`,
+                            `"${l.email || ''}"`,
+                            `"${l.vertical ? l.vertical + ' - ' : ''}${l.type || ''}"`,
+                            `"${l.zip || ''}"`,
+                            `"${l.urgency || 'Standard'}"`,
+                            `"${l.status || 'Sold'}"`,
+                            Number(l.price || 0).toFixed(2),
+                            `"${new Date(l.time || Date.now()).toISOString().replace('T', ' ').slice(0, 19)}"`
+                          ].join(','));
+                          // Prepend UTF-8 BOM so Excel opens clean columns
+                          const csvString = '\uFEFF' + [csvHeaders.join(','), ...rows].join('\n');
+                          const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.setAttribute('download', `b2b_inbox_excel_${Date.now()}.csv`);
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        📊 Excel (.csv)
+                      </button>
+                      <button
+                        onClick={() => {
+                          const csvHeaders = ['purchase_id', 'lead_id', 'name', 'phone', 'email', 'service', 'zip', 'urgency', 'status', 'cost', 'date'];
+                          const rows = leads.map(l => [
+                            l.purchaseId || '',
+                            `L${String(l.id).padStart(6, '0')}`,
+                            l.name || '',
+                            l.phone || '',
+                            l.email || '',
+                            `${l.vertical ? l.vertical + ' - ' : ''}${l.type || ''}`,
+                            l.zip || '',
+                            l.urgency || 'Standard',
+                            l.status || 'Sold',
+                            Number(l.price || 0).toFixed(2),
+                            new Date(l.time || Date.now()).toISOString().replace('T', ' ').slice(0, 19)
+                          ].join('\t'));
+                          const tsvString = [csvHeaders.join('\t'), ...rows].join('\n');
+                          navigator.clipboard.writeText(tsvString);
+                          if (window.confirm('✅ Скопировано в буфер обмена!\n\nОткрыть пустую таблицу Google Sheets для вставки (Cmd+V / Ctrl+V)?')) {
+                            window.open('https://sheets.new', '_blank');
+                          }
+                        }}
+                        style={{ background: '#059669', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        🟢 Google Sheets
+                      </button>
+                    </div>
                   )}
                 </header>
                 {leads.length === 0 && (
