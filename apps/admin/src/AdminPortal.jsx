@@ -66,6 +66,54 @@ export default function AdminPortal() {
     fetchBuyers();
   };
 
+  const handleExportCSV = () => {
+    if (leads.length === 0) {
+      alert('No leads data to export.');
+      return;
+    }
+
+    const csvHeaders = [
+      'lead_id', 'created_at', 'vertical', 'service_type', 'zip_code',
+      'urgency', 'status', 'buyer', 'sold_price', 'return_reason',
+      'lead_type', 'appointment_date', 'appointment_time'
+    ];
+
+    const rows = leads.map(l => {
+      const primaryPurchase = l.purchases && l.purchases[0];
+      const buyerName = l.purchases && l.purchases.length > 0
+        ? l.purchases.map(p => p.buyer?.name || p.buyerId).join(';')
+        : (l.buyerName || '');
+      const soldPrice = primaryPurchase ? primaryPurchase.price : (l.soldPrice || 0);
+      const returnReason = primaryPurchase ? (primaryPurchase.returnReason || '') : (l.returnReason || '');
+
+      return [
+        `"L${String(l.id).padStart(6, '0')}"`,
+        `"${new Date(l.createdAt || Date.now()).toISOString()}"`,
+        `"${l.vertical || l.serviceType || ''}"`,
+        `"${l.serviceType || ''}"`,
+        `"${l.zipCode || ''}"`,
+        `"${l.urgency || 'Standard'}"`,
+        `"${l.status || 'Sold'}"`,
+        `"${buyerName}"`,
+        Number(soldPrice).toFixed(2),
+        `"${returnReason}"`,
+        `"${l.leadType || 'CPL'}"`,
+        `"${l.appointmentDate || ''}"`,
+        `"${l.appointmentTime || ''}"`
+      ].join(',');
+    });
+
+    const csvString = [csvHeaders.join(','), ...rows].join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `unicorn_leads_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="admin-layout">
       <header className="admin-header glass-card">
@@ -83,7 +131,12 @@ export default function AdminPortal() {
             </button>
           ))}
         </nav>
-        <button className="btn-refresh" onClick={fetchAll}>↻ Refresh</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn-export" style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleExportCSV}>
+            📥 Export CSV
+          </button>
+          <button className="btn-refresh" onClick={fetchAll}>↻ Refresh</button>
+        </div>
       </header>
 
       <main className="admin-main">

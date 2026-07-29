@@ -314,9 +314,43 @@ export default function B2BPortal() {
             {/* INBOX */}
             {activeTab === 'inbox' && (
               <div className="inbox-view">
-                <header className="view-header">
-                  <h2>Lead Inbox</h2>
-                  <div className="status-indicator"><span className="dot online"/>&nbsp;Receiving Leads</div>
+                <header className="view-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <h2>Lead Inbox</h2>
+                    <div className="status-indicator"><span className="dot online"/>&nbsp;Receiving Leads</div>
+                  </div>
+                  {leads.length > 0 && (
+                    <button
+                      onClick={() => {
+                        const csvHeaders = ['purchase_id', 'lead_id', 'name', 'phone', 'email', 'service', 'zip', 'urgency', 'status', 'cost', 'date'];
+                        const rows = leads.map(l => [
+                          `"${l.purchaseId || ''}"`,
+                          `"L${String(l.id).padStart(6, '0')}"`,
+                          `"${l.name || ''}"`,
+                          `"${l.phone || ''}"`,
+                          `"${l.email || ''}"`,
+                          `"${l.vertical ? l.vertical + ' - ' : ''}${l.type || ''}"`,
+                          `"${l.zip || ''}"`,
+                          `"${l.urgency || 'Standard'}"`,
+                          `"${l.status || 'Sold'}"`,
+                          Number(l.price || 0).toFixed(2),
+                          `"${new Date(l.time || Date.now()).toISOString()}"`
+                        ].join(','));
+                        const csvString = [csvHeaders.join(','), ...rows].join('\n');
+                        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.setAttribute('download', `b2b_inbox_export_${Date.now()}.csv`);
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      📥 Export CSV
+                    </button>
+                  )}
                 </header>
                 {leads.length === 0 && (
                   <div className="empty-state">

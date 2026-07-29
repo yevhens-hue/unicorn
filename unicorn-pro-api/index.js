@@ -329,6 +329,55 @@ app.get('/api/admin/leads', adminMiddleware, async (req, res) => {
   }
 });
 
+// Admin: Export leads as CSV
+app.get('/api/admin/leads/export', adminMiddleware, async (req, res) => {
+  try {
+    const leads = await prisma.lead.findMany({
+      include: { purchases: { include: { buyer: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const csvHeaders = [
+      'lead_id', 'created_at', 'vertical', 'service_type', 'zip_code',
+      'urgency', 'status', 'buyer', 'sold_price', 'return_reason',
+      'lead_type', 'appointment_date', 'appointment_time'
+    ];
+
+    const rows = leads.map(l => {
+      const primaryPurchase = l.purchases && l.purchases[0];
+      const buyerName = l.purchases && l.purchases.length > 0
+        ? l.purchases.map(p => p.buyer?.name || p.buyerId).join(';')
+        : '';
+      const soldPrice = primaryPurchase ? primaryPurchase.price : 0;
+      const returnReason = primaryPurchase ? (primaryPurchase.returnReason || '') : '';
+
+      return [
+        `"L${String(l.id).padStart(6, '0')}"`,
+        `"${new Date(l.createdAt).toISOString()}"`,
+        `"${l.vertical || l.serviceType || ''}"`,
+        `"${l.serviceType || ''}"`,
+        `"${l.zipCode || ''}"`,
+        `"${l.urgency || 'Standard'}"`,
+        `"${l.status}"`,
+        `"${buyerName}"`,
+        soldPrice.toFixed(2),
+        `"${returnReason}"`,
+        `"${l.leadType || 'CPL'}"`,
+        `"${l.appointmentDate || ''}"`,
+        `"${l.appointmentTime || ''}"`
+      ].join(',');
+    });
+
+    const csvContent = [csvHeaders.join(','), ...rows].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=unicorn_leads_export_${Date.now()}.csv`);
+    res.status(200).send(csvContent);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Admin: All buyers
 app.get('/api/admin/buyers', adminMiddleware, async (req, res) => {
   try {
