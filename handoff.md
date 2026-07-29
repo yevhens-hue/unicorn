@@ -1,5 +1,5 @@
 # 🦄 Unicorn Pro — Handoff Document
-> Сесія збережена: 2026-07-26T00:15:00+02:00
+> Сесія збережена: 2026-07-30T00:27:00+02:00
 
 ---
 
@@ -7,21 +7,41 @@
 
 | Фаза | Опис | Статус |
 |------|------|--------|
-| Phase 1 | Аналіз ринку, вибір вертикалі (HVAC), MVP-скоуп | ✅ Done |
-| Phase 2 | Prisma schema, Repositories (DAO), Unit-тести (Jest) | ✅ Done |
-| Phase 3 | React/Vite фронтенд, B2C Funnel, B2B Portal, Vitest | ✅ Done |
-| Deploy  | GitHub + Vercel фронтенд + Vercel API задеплоєно | ✅ Done |
+| Phase 1 | Аналіз ринку (Angi, Networx), вибір вертикалі (HVAC/Insurance), MVP-скоуп | ✅ Done |
+| Phase 2 | Prisma schema, Repositories (DAO), Unit-тести (Jest), Ping-Post Engine | ✅ Done |
+| Phase 3 | React 19 / Vite фронтенди (B2C Funnel, B2B Portal, Admin Dashboard) | ✅ Done |
+| Phase 4 | Домени, Vercel Deploy & Excel / Google Sheets Экспорт | ✅ Done |
+| Phase 5 | Інтеграція LM-style (LeadsMarket) аукціону та розширений биллинг | 🔄 In Progress |
 
 ---
 
-## 🔗 Посилання
+## 🔗 Живі Посилання на Продукт
 
 | Ресурс | URL |
 |--------|-----|
 | GitHub репозиторій | https://github.com/yevhens-hue/unicorn |
-| Frontend (Vercel) | https://unicorn-one-opal.vercel.app/ |
-| Backend API (Vercel) | https://unicorn-pro-api-yevhens-hues-projects.vercel.app/ |
-| Supabase Project ID | roxdzvzlvvmmeufeyqkb |
+| Admin Dashboard | https://unicorn-admin-dashboard.vercel.app/ |
+| Admin App Backup | https://unicorn-admin-app.vercel.app/ |
+| B2B Contractor Portal | https://unicorn-b2b.vercel.app/ |
+| B2C LeadGen Funnel | https://unicorn-b2c.vercel.app/ |
+| Backend API (Vercel) | https://unicorn-pro-api-yevhens-hues-projects.vercel.app |
+| Supabase Project ID | `roxdzvzlvvmmeufeyqkb` |
+
+---
+
+## 🗂 Досягнення сесії
+
+1. **Виправлення доменів та конфігурації Vercel:**
+   - Перейменовано конфігурацію Vercel з опечатного `unicorn-abmin` на `unicorn-admin`.
+   - Прив'язано активні чисті домени `unicorn-admin-dashboard.vercel.app` та `unicorn-admin-app.vercel.app`.
+
+2. **Модуль экспорту в Excel и Google Sheets:**
+   - **Бекенд (`unicorn-pro-api/index.js`):** Додано ендпоінти експорту з префіксом UTF-8 BOM (`\uFEFF`), що гарантує нативне відкриття CSV в Excel по окремих колонках.
+   - **Адмінка & B2B Кабінет:** Додано кнопки `📊 Excel (.csv)` та `🟢 Google Sheets` (копіювання TSV в буфер обмена + автоматичне відкриття `sheets.new`).
+
+3. **Продуктова аналітика & Сравнительный анализ с LeadsMarket:**
+   - Описана покрокова послідовність проходження ліда (B2C -> Twilio/TCPA validation -> Ping-Post Auction -> DB billing -> B2B Inbox -> Admin CRM).
+   - Проведено розбір відмінностей з корпоративною платформою LeadsMarket (LM/LeadBrain) на основі наданих SOP і PRD документів.
 
 ---
 
@@ -39,115 +59,42 @@ Unicorn/
 │   ├── prisma/
 │   │   ├── schema.prisma   # Buyer, Campaign, Lead, LeadPurchase
 │   │   └── seed.js
-│   ├── tests/
-│   ├── index.js            # Express + всі API ендпоінти
+│   ├── index.js            # Express + API ендпоінти (включаючи CSV/Excel export)
 │   └── vercel.json
-└── unicorn-pro-mvp/        # React/Vite фронтенд
-    ├── src/
-    │   ├── pages/B2CFunnel.jsx   # 4-крокова воронка
-    │   ├── pages/B2BPortal.jsx   # Кабінет підрядника
-    │   ├── components/PhoneInput.jsx
-    │   └── tests/
-    └── vercel.json
+├── apps/
+│   ├── admin/              # React/Vite Admin Dashboard
+│   ├── b2b/                # React/Vite B2B Contractor Portal
+│   └── b2c/                # React/Vite B2C Funnel
+└── unicorn-pro/            # HTML/JS статична презентація
 ```
 
 ---
 
-## 🔴 Критичні задачі для наступної сесії
+## 🔴 Задачі для наступної сесії
 
-### ПРІОРИТЕТ 1 — Підключити фронтенд до бекенду
-
-Фронтенд звертається на `localhost:3001` — API-запити не досягають бекенду.
-
-**Що зробити:**
-1. Vercel → проєкт `unicorn` (фронтенд) → Settings → Environment Variables
-2. Додати: Key=`VITE_API_URL`, Value=`https://unicorn-pro-api-yevhens-hues-projects.vercel.app`
-3. Redeploy фронтенду
-
----
-
-### ПРІОРИТЕТ 2 — Запустити міграції та seed у Supabase
-
-Продакшн база порожня. API впаде при першому запиті.
-
-```bash
-cd unicorn-pro-api
-# Спочатку заповни .env правильним DATABASE_URL з Supabase
-npx prisma migrate deploy   # створить таблиці
-node prisma/seed.js         # заповнить тестовими даними
-```
+1. **Запуск Prisma міграцій та seed у продакшн БД Supabase:**
+   ```bash
+   cd unicorn-pro-api
+   npx prisma migrate deploy
+   node prisma/seed.js
+   ```
+2. **Розширення PPA (Pay-Per-Appointment) функціоналу:**
+   - Интеграция Calendar API для бронирования слотов.
+   - Отправка SMS-подтверждений через Twilio.
+3. **Имплементация Second-Price Auction & Waterfall (LM-style):**
+   - Расчет итоговой цены по 2-й ставке + комиссия платформы.
+   - Cascade fallback при отломанном Post от байера.
 
 ---
 
-### ПРІОРИТЕТ 3 — Додати обробку помилок в API
-
-Всі `await prisma.*` в `index.js` без `try/catch`. Потрібно обернути в:
-```js
-try { ... } catch(e) { res.status(500).json({ error: e.message }) }
-```
-
----
-
-### ПРІОРИТЕТ 4 — Оновлене завдання від Еда
-
-Перехід від моделі CPL (cost-per-lead) до **booked appointments** (cost-per-appointment).
-- Підрядники платять не за лід, а за реальний записаний візит
-- Потрібно: Calendar API, SMS-підтвердження (Twilio), статуси апоінтментів, новий флоу оплати
-- Зробити MVP або wireframes нової моделі
-
----
-
-## 🏗 Архітектура Ping-Post аукціону
-
-```
-POST /api/leads (B2C submit)
-    → CampaignRepository.getActiveMatchingCampaigns(zipCode)
-    → PingPostService.runAuction(lead, campaigns)
-        1 buyer  → Exclusive ($maxBid)
-        2-3      → Shared ($maxBid * 0.6 each)
-        0        → Unsold
-    → LeadRepository.saveTransaction() → Supabase
-    → Response: winners[] → B2C Thank You page
-```
-
----
-
-## 🧩 Технічний стек
-
-| Шар | Технологія |
-|-----|------------|
-| Frontend | React 19, Vite, Framer Motion, Lucide Icons |
-| Backend | Node.js, Express.js, Prisma ORM |
-| Database | PostgreSQL (Supabase) |
-| Testing | Vitest + Testing Library (FE), Jest (BE) |
-| Deploy | Vercel + GitHub Actions CI |
-
----
-
-## 📌 Environment Variables
-
-### Backend (Vercel unicorn-pro-api)
-```
-DATABASE_URL=postgresql://postgres.roxdzvzlvvmmeufeyqkb:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres
-```
-
-### Frontend (Vercel unicorn)
-```
-VITE_API_URL=https://unicorn-pro-api-yevhens-hues-projects.vercel.app
-```
-
----
-
-## 📋 Команди для швидкого старту
+## 📋 Команды для быстрого запуска
 
 ```bash
 # Backend
 cd unicorn-pro-api && npm install && npx prisma generate && node index.js
 
-# Frontend
-cd unicorn-pro-mvp && npm install && npm run dev
-
-# Тести
-cd unicorn-pro-api && npm test
-cd unicorn-pro-mvp && npm run test
+# Apps
+cd apps/admin && npm run dev
+cd apps/b2b && npm run dev
+cd apps/b2c && npm run dev
 ```
