@@ -12,14 +12,12 @@ describe('ExportDropdown Component', () => {
   test('opens dropdown menu on click and lists format options', () => {
     const handleCsv = vi.fn();
     const handleExcel = vi.fn();
-    const handleSheets = vi.fn();
 
     render(
       <ExportDropdown
         title="Export Leads"
         onExportCsv={handleCsv}
         onExportExcel={handleExcel}
-        onExportGoogleSheets={handleSheets}
       />
     );
 
@@ -28,7 +26,6 @@ describe('ExportDropdown Component', () => {
 
     expect(screen.getByText(/CSV File \(\.csv\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Excel \(\.xlsx\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/Google Sheets/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByText(/CSV File \(\.csv\)/i));
     expect(handleCsv).toHaveBeenCalledTimes(1);

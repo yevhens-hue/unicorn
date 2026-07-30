@@ -387,7 +387,6 @@ export default function B2BPortal() {
                     <ExportDropdown
                       onExportCsv={handleB2bExportCsv}
                       onExportExcel={handleB2bExportExcel}
-                      onExportGoogleSheets={handleB2bCopyGoogleSheets}
                       title="Export Inbox"
                       filteredCount={leads.length}
                     />

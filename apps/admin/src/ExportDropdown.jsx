@@ -4,7 +4,6 @@ import { Download, ChevronDown, FileSpreadsheet, FileText } from 'lucide-react';
 export default function ExportDropdown({
   onExportCsv,
   onExportExcel,
-  onExportGoogleSheets,
   title = "Export",
   filteredCount = null
 }) {
@@ -131,37 +130,6 @@ export default function ExportDropdown({
             <div>
               <div style={{ fontWeight: 600 }}>Excel (.xlsx)</div>
               <div style={{ fontSize: '11px', color: '#94a3b8' }}>Microsoft Excel format</div>
-            </div>
-          </button>
-
-          <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '4px 0' }} />
-
-          <button
-            type="button"
-            onClick={() => handleSelect(onExportGoogleSheets)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '10px 12px',
-              border: 'none',
-              background: 'transparent',
-              color: '#f8fafc',
-              fontSize: '13px',
-              fontWeight: 500,
-              borderRadius: '8px',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'background 0.15s'
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
-            <span style={{ fontSize: '15px' }}>🟢</span>
-            <div>
-              <div style={{ fontWeight: 600 }}>Google Sheets</div>
-              <div style={{ fontSize: '11px', color: '#94a3b8' }}>Copy TSV & open sheets.new</div>
             </div>
           </button>
 

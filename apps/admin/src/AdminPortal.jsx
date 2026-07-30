@@ -246,7 +246,6 @@ export default function AdminPortal() {
           <ExportDropdown
             onExportCsv={handleExportCsv}
             onExportExcel={handleExportExcel}
-            onExportGoogleSheets={handleCopyGoogleSheets}
             title="Export Leads"
             filteredCount={getFilteredLeads().length}
           />
