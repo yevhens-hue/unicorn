@@ -88,4 +88,28 @@ describe('PingPostService (Second-Price Vickrey Auction)', () => {
     expect(result.winners[0].id).toBe(3);
     expect(result.winners[1].id).toBe(4);
   });
+
+  it('should execute Waterfall Cascading fallback to Buyer #2 when Buyer #1 rejects or times out', async () => {
+    const buyer1 = { id: 1, name: 'Buyer 1', balance: 100 };
+    const buyer2 = { id: 2, name: 'Buyer 2', balance: 100 };
+
+    const twoExclusiveCampaigns = [
+      { id: 1, buyerId: 1, vertical: 'HVAC', zipCodes: 'all', leadType: 'Exclusive', maxBid: 90, isActive: true, buyer: buyer1, simulatesRejection: true, rejectionReason: 'Timeout >2000ms' },
+      { id: 2, buyerId: 2, vertical: 'HVAC', zipCodes: 'all', leadType: 'Exclusive', maxBid: 60, isActive: true, buyer: buyer2 },
+    ];
+
+    const lead = { serviceType: 'HVAC', zipCode: '10001', urgency: 'This Week' };
+    const rawResult = PingPostService.processAuction(lead, twoExclusiveCampaigns);
+
+    const finalResult = await PingPostService.executeWaterfallPost(lead, rawResult);
+
+    // Buyer #1 failed -> Waterfall cascaded to Buyer #2
+    expect(finalResult.status).toBe('Exclusive');
+    expect(finalResult.winners.length).toBe(1);
+    expect(finalResult.winners[0].id).toBe(2);
+    expect(finalResult.winners[0].buyerId).toBe(2);
+    expect(finalResult.waterfallLogs.length).toBe(2);
+    expect(finalResult.waterfallLogs[0].status).toBe('Cascaded_Fallback');
+    expect(finalResult.waterfallLogs[1].status).toBe('Accepted');
+  });
 });

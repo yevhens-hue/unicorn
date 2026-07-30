@@ -43,11 +43,12 @@ class PingPostService {
   }
 
   /**
-   * Process the ping-post auction for a given lead using Second-Price (Vickrey) pricing.
+   * Process the ping-post auction for a given lead using Second-Price (Vickrey) pricing
+   * and build a ranked Waterfall Queue for fallback delivery.
    * 
    * @param {Lead} lead - The lead to process
    * @param {Campaign[]} activeCampaigns - List of all active campaigns
-   * @returns {AuctionResult} The result of the auction including cleared prices
+   * @returns {AuctionResult} The result of the auction including waterfall queue
    */
   static processAuction(lead, activeCampaigns) {
     const qFactor = this.calculateQualityFactor(lead);
@@ -64,7 +65,7 @@ class PingPostService {
     });
 
     if (eligible.length === 0) {
-      return { status: 'Unsold', winners: [], maxExclusiveBid: 0, topSharedSum: 0, auctionType: 'Second-Price (Vickrey)' };
+      return { status: 'Unsold', winners: [], waterfallQueue: [], maxExclusiveBid: 0, topSharedSum: 0, auctionType: 'Second-Price (Vickrey)' };
     }
 
     // 2. Separate Exclusive and Shared, sorted descending by adjusted bid
@@ -74,26 +75,20 @@ class PingPostService {
     const shared = eligible.filter(c => c.leadType === 'Shared' || c.leadType === 'Both')
       .sort((a, b) => (b.maxBid * qFactor) - (a.maxBid * qFactor));
 
-    // 3. Calculate top exclusive bid & Vickrey second-price
-    let topExclusive = null;
-    let maxExclusiveBid = 0;
-    let exclusiveClearedPrice = 0;
-
-    if (exclusive.length > 0) {
-      const winner = exclusive[0];
-      const runnerUp = exclusive.length > 1 ? exclusive[1] : null;
-      const runnerUpBid = runnerUp ? runnerUp.maxBid : null;
-      
-      const clearedPrice = this.calculateSecondPrice(winner.maxBid, runnerUpBid, 30.0);
-      
-      topExclusive = {
-        ...winner,
-        submittedBid: winner.maxBid,
-        clearedPrice: clearedPrice
+    // 3. Build Exclusive candidates waterfall queue with Vickrey prices
+    const exclusiveWaterfallQueue = exclusive.map((c, idx) => {
+      const runnerUp = exclusive[idx + 1] || null;
+      const clearedPrice = this.calculateSecondPrice(c.maxBid, runnerUp ? runnerUp.maxBid : null, 30.0);
+      return {
+        ...c,
+        submittedBid: c.maxBid,
+        clearedPrice
       };
-      maxExclusiveBid = winner.maxBid * qFactor;
-      exclusiveClearedPrice = clearedPrice * qFactor;
-    }
+    });
+
+    let topExclusive = exclusiveWaterfallQueue.length > 0 ? exclusiveWaterfallQueue[0] : null;
+    let maxExclusiveBid = topExclusive ? topExclusive.maxBid * qFactor : 0;
+    let exclusiveClearedPrice = topExclusive ? topExclusive.clearedPrice * qFactor : 0;
 
     // 4. Calculate top 4 shared bids & Vickrey second-price for each winner
     const topSharedRaw = shared.slice(0, 4);
@@ -115,11 +110,12 @@ class PingPostService {
       };
     });
 
-    // 5. Compare Exclusive vs Shared and decide winner
+    // 5. Compare Exclusive vs Shared and decide primary winner & waterfall queue
     if (topExclusive && maxExclusiveBid >= topSharedSum) {
       return {
         status: 'Exclusive',
         winners: [topExclusive],
+        waterfallQueue: exclusiveWaterfallQueue,
         maxExclusiveBid,
         topSharedSum,
         auctionType: 'Second-Price (Vickrey)',
@@ -129,6 +125,7 @@ class PingPostService {
       return {
         status: 'Shared',
         winners: topShared,
+        waterfallQueue: topShared,
         maxExclusiveBid,
         topSharedSum,
         auctionType: 'Second-Price (Vickrey)',
@@ -136,7 +133,105 @@ class PingPostService {
       };
     }
 
-    return { status: 'Unsold', winners: [], maxExclusiveBid: 0, topSharedSum: 0, auctionType: 'Second-Price (Vickrey)' };
+    return { status: 'Unsold', winners: [], waterfallQueue: [], maxExclusiveBid: 0, topSharedSum: 0, auctionType: 'Second-Price (Vickrey)' };
+  }
+
+  /**
+   * Execute Waterfall Fallback POST delivery for a lead across ranked candidates.
+   * Cascades to Candidate #2, #3 if previous candidate fails or times out (>2000ms).
+   * 
+   * @param {Lead} leadData 
+   * @param {AuctionResult} auctionResult 
+   * @param {Function} [postDeliveryFn] - Optional delivery function (candidate, lead) => Promise<{ accepted: boolean, reason?: string }>
+   * @returns {Promise<Object>} Final auction outcome with waterfall log trace
+   */
+  static async executeWaterfallPost(leadData, auctionResult, postDeliveryFn = null) {
+    if (!auctionResult || auctionResult.status === 'Unsold' || auctionResult.winners.length === 0) {
+      return { ...auctionResult, waterfallLogs: [] };
+    }
+
+    const defaultDelivery = async (candidate, lead) => {
+      if (candidate.postEndpoint) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2000ms LM timeout limit
+        try {
+          const response = await fetch(candidate.postEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lead, campaignId: candidate.id }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (response.ok) {
+            const data = await response.json();
+            return { accepted: data.accepted !== false, responseTimeMs: 150 };
+          }
+          return { accepted: false, reason: `HTTP ${response.status}` };
+        } catch (err) {
+          clearTimeout(timeoutId);
+          return { accepted: false, reason: err.name === 'AbortError' ? 'Timeout >2000ms' : err.message };
+        }
+      }
+      if (candidate.simulatesRejection) {
+        return { accepted: false, reason: candidate.rejectionReason || 'Buyer API rejected criteria' };
+      }
+      return { accepted: true, responseTimeMs: 50 };
+    };
+
+    const delivery = postDeliveryFn || defaultDelivery;
+    const waterfallQueue = auctionResult.waterfallQueue || auctionResult.winners;
+    const waterfallLogs = [];
+    let finalWinners = [];
+    let finalStatus = 'Unsold';
+
+    if (auctionResult.status === 'Exclusive') {
+      for (const candidate of waterfallQueue) {
+        const startTime = Date.now();
+        try {
+          const res = await delivery(candidate, leadData);
+          const duration = Date.now() - startTime;
+          if (res.accepted) {
+            waterfallLogs.push({
+              buyerId: candidate.buyerId,
+              campaignId: candidate.id,
+              status: 'Accepted',
+              durationMs: duration,
+              clearedPrice: candidate.clearedPrice
+            });
+            finalWinners = [candidate];
+            finalStatus = 'Exclusive';
+            break; // Candidate accepted! Stop waterfall execution.
+          } else {
+            waterfallLogs.push({
+              buyerId: candidate.buyerId,
+              campaignId: candidate.id,
+              status: 'Cascaded_Fallback',
+              reason: res.reason || 'Rejected by buyer API',
+              durationMs: duration
+            });
+            // Waterfall to next candidate in queue!
+          }
+        } catch (err) {
+          waterfallLogs.push({
+            buyerId: candidate.buyerId,
+            campaignId: candidate.id,
+            status: 'Cascaded_Fallback',
+            reason: err.message,
+            durationMs: Date.now() - startTime
+          });
+        }
+      }
+    } else {
+      finalWinners = auctionResult.winners;
+      finalStatus = 'Shared';
+    }
+
+    return {
+      ...auctionResult,
+      status: finalWinners.length > 0 ? finalStatus : 'Unsold',
+      winners: finalWinners,
+      waterfallLogs
+    };
   }
 }
 

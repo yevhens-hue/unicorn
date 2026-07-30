@@ -27,7 +27,7 @@ class LeadController {
       // 1. Fetch matching campaigns via Repository
       const activeCampaigns = await CampaignRepository.getActiveMatchingCampaigns(serviceType, zipCode);
 
-      // 2. Delegate to PingPostService
+      // 2. Delegate to PingPostService for Second-Price Auction & Waterfall Queue
       const leadData = { 
         vertical, 
         serviceType, 
@@ -47,9 +47,12 @@ class LeadController {
         appointmentStatus: appointmentStatus || (appointmentDate ? 'Confirmed' : 'Pending')
       };
       
-      const auctionResult = PingPostService.processAuction(leadData, activeCampaigns);
+      const rawAuctionResult = PingPostService.processAuction(leadData, activeCampaigns);
 
-      // 3. Record Lead & Transactions atomically if sold
+      // 3. Execute Waterfall Fallback Delivery
+      const auctionResult = await PingPostService.executeWaterfallPost(leadData, rawAuctionResult);
+
+      // 4. Record Lead & Transactions atomically if sold
       let newLead;
       if (auctionResult.status === 'Unsold') {
         newLead = await LeadRepository.saveUnsoldLead(leadData);
@@ -69,7 +72,8 @@ class LeadController {
 
       const safeAuctionResult = {
         status: auctionResult.status,
-        winners: safeWinners
+        winners: safeWinners,
+        waterfallLogs: auctionResult.waterfallLogs || []
       };
 
       return res.status(201).json({
