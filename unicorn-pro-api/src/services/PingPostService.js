@@ -1,3 +1,5 @@
+const CrmIntegrationService = require('./CrmIntegrationService');
+
 /**
  * @typedef {import('../types').Lead} Lead
  * @typedef {import('../types').Campaign} Campaign
@@ -151,31 +153,7 @@ class PingPostService {
     }
 
     const defaultDelivery = async (candidate, lead) => {
-      if (candidate.postEndpoint) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2000ms LM timeout limit
-        try {
-          const response = await fetch(candidate.postEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lead, campaignId: candidate.id }),
-            signal: controller.signal
-          });
-          clearTimeout(timeoutId);
-          if (response.ok) {
-            const data = await response.json();
-            return { accepted: data.accepted !== false, responseTimeMs: 150 };
-          }
-          return { accepted: false, reason: `HTTP ${response.status}` };
-        } catch (err) {
-          clearTimeout(timeoutId);
-          return { accepted: false, reason: err.name === 'AbortError' ? 'Timeout >2000ms' : err.message };
-        }
-      }
-      if (candidate.simulatesRejection) {
-        return { accepted: false, reason: candidate.rejectionReason || 'Buyer API rejected criteria' };
-      }
-      return { accepted: true, responseTimeMs: 50 };
+      return CrmIntegrationService.dispatchToContractorCrm(candidate, lead);
     };
 
     const delivery = postDeliveryFn || defaultDelivery;

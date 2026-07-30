@@ -31,6 +31,9 @@ model Campaign {
   maxBid     Float
   isActive   Boolean  @default(true)
   dailyLimit Int      @default(10)
+  crmType    String?  @default("Generic") // "ServiceTitan", "Salesforce", "HubSpot", "Generic"
+  crmApiKey  String?
+  crmEndpoint String?
   createdAt  DateTime @default(now())
 }
 
