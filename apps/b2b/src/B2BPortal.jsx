@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Inbox, Target, CreditCard, RotateCcw, BarChart2, LogOut, Plus, X } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import './B2BPortal.css';
+import ExportDropdown from './ExportDropdown';
 
 const API = import.meta.env.VITE_API_URL || 'https://unicorn-pro-api-backend.vercel.app';
 
@@ -257,6 +258,69 @@ export default function B2BPortal() {
     } catch (err) { console.error(err); }
   };
 
+  const getB2bExportData = (targetLeads = leads) => {
+    const csvHeaders = ['purchase_id', 'lead_id', 'name', 'phone', 'email', 'service', 'zip', 'urgency', 'status', 'cost', 'date'];
+    const rows = targetLeads.map(l => [
+      l.purchaseId || '',
+      `L${String(l.id).padStart(6, '0')}`,
+      l.name || '',
+      l.phone || '',
+      l.email || '',
+      `${l.vertical ? l.vertical + ' - ' : ''}${l.type || ''}`,
+      l.zip || '',
+      l.urgency || 'Standard',
+      l.status || 'Sold',
+      Number(l.price || 0).toFixed(2),
+      new Date(l.time || Date.now()).toISOString().replace('T', ' ').slice(0, 19)
+    ]);
+    return { csvHeaders, rows };
+  };
+
+  const handleB2bExportCsv = () => {
+    if (leads.length === 0) return;
+    const { csvHeaders, rows } = getB2bExportData(leads);
+    const formattedRows = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','));
+    const csvString = '\uFEFF' + [csvHeaders.join(','), ...formattedRows].join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `b2b_inbox_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleB2bExportExcel = () => {
+    if (leads.length === 0) return;
+    const { csvHeaders, rows } = getB2bExportData(leads);
+    const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n<Worksheet ss:Name="B2B Leads"><Table>\n`;
+    const xmlFooter = `</Table></Worksheet></Workbook>`;
+    const escapeXml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const headerRow = `<Row>` + csvHeaders.map(h => `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`).join('') + `</Row>`;
+    const dataRows = rows.map(r => `<Row>` + r.map(c => `<Cell><Data ss:Type="String">${escapeXml(c)}</Data></Cell>`).join('') + `</Row>`).join('\n');
+
+    const xmlContent = xmlHeader + headerRow + '\n' + dataRows + '\n' + xmlFooter;
+    const blob = new Blob([xmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `b2b_inbox_excel_${Date.now()}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleB2bCopyGoogleSheets = () => {
+    if (leads.length === 0) return;
+    const { csvHeaders, rows } = getB2bExportData(leads);
+    const tsvString = [csvHeaders.join('\t'), ...rows.map(r => r.join('\t'))].join('\n');
+    navigator.clipboard.writeText(tsvString);
+    if (window.confirm('✅ Скопировано в буфер обмена!\n\nОткрыть пустую таблицу Google Sheets для вставки (Cmd+V / Ctrl+V)?')) {
+      window.open('https://sheets.new', '_blank');
+    }
+  };
+
   if (!token || !buyer) return <LoginScreen onLogin={handleLogin}/>;
 
   return (
@@ -320,65 +384,13 @@ export default function B2BPortal() {
                     <div className="status-indicator"><span className="dot online"/>&nbsp;Receiving Leads</div>
                   </div>
                   {leads.length > 0 && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => {
-                          const csvHeaders = ['purchase_id', 'lead_id', 'name', 'phone', 'email', 'service', 'zip', 'urgency', 'status', 'cost', 'date'];
-                          const rows = leads.map(l => [
-                            `"${l.purchaseId || ''}"`,
-                            `"L${String(l.id).padStart(6, '0')}"`,
-                            `"${l.name || ''}"`,
-                            `"${l.phone || ''}"`,
-                            `"${l.email || ''}"`,
-                            `"${l.vertical ? l.vertical + ' - ' : ''}${l.type || ''}"`,
-                            `"${l.zip || ''}"`,
-                            `"${l.urgency || 'Standard'}"`,
-                            `"${l.status || 'Sold'}"`,
-                            Number(l.price || 0).toFixed(2),
-                            `"${new Date(l.time || Date.now()).toISOString().replace('T', ' ').slice(0, 19)}"`
-                          ].join(','));
-                          // Prepend UTF-8 BOM so Excel opens clean columns
-                          const csvString = '\uFEFF' + [csvHeaders.join(','), ...rows].join('\n');
-                          const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-                          const url = URL.createObjectURL(blob);
-                          const link = document.createElement('a');
-                          link.href = url;
-                          link.setAttribute('download', `b2b_inbox_excel_${Date.now()}.csv`);
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}
-                        style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        📊 Excel (.csv)
-                      </button>
-                      <button
-                        onClick={() => {
-                          const csvHeaders = ['purchase_id', 'lead_id', 'name', 'phone', 'email', 'service', 'zip', 'urgency', 'status', 'cost', 'date'];
-                          const rows = leads.map(l => [
-                            l.purchaseId || '',
-                            `L${String(l.id).padStart(6, '0')}`,
-                            l.name || '',
-                            l.phone || '',
-                            l.email || '',
-                            `${l.vertical ? l.vertical + ' - ' : ''}${l.type || ''}`,
-                            l.zip || '',
-                            l.urgency || 'Standard',
-                            l.status || 'Sold',
-                            Number(l.price || 0).toFixed(2),
-                            new Date(l.time || Date.now()).toISOString().replace('T', ' ').slice(0, 19)
-                          ].join('\t'));
-                          const tsvString = [csvHeaders.join('\t'), ...rows].join('\n');
-                          navigator.clipboard.writeText(tsvString);
-                          if (window.confirm('✅ Скопировано в буфер обмена!\n\nОткрыть пустую таблицу Google Sheets для вставки (Cmd+V / Ctrl+V)?')) {
-                            window.open('https://sheets.new', '_blank');
-                          }
-                        }}
-                        style={{ background: '#059669', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        🟢 Google Sheets
-                      </button>
-                    </div>
+                    <ExportDropdown
+                      onExportCsv={handleB2bExportCsv}
+                      onExportExcel={handleB2bExportExcel}
+                      onExportGoogleSheets={handleB2bCopyGoogleSheets}
+                      title="Export Inbox"
+                      filteredCount={leads.length}
+                    />
                   )}
                 </header>
                 {leads.length === 0 && (

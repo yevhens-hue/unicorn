@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, FileText, BarChart2, List, AlertTriangle } from 'lucide-react';
 import './AdminPortal.css';
+import ExportDropdown from './ExportDropdown';
 
 const API = import.meta.env.VITE_API_URL || 'https://unicorn-pro-api-backend.vercel.app';
 const ADMIN_KEY = 'unicorn-admin-2024';
@@ -15,8 +16,6 @@ export default function AdminPortal() {
   const [loading, setLoading] = useState(true);
   const [leadsFilter, setLeadsFilter] = useState({ status: '', vertical: '' });
   const [balanceInputs, setBalanceInputs] = useState({});
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-
 
   const fetchKpi = async () => {
     const res = await fetch(`${API}/api/admin/kpi`, { headers });
@@ -28,36 +27,50 @@ export default function AdminPortal() {
     if (leadsFilter.status) params.append('status', leadsFilter.status);
     if (leadsFilter.vertical) params.append('vertical', leadsFilter.vertical);
     const res = await fetch(`${API}/api/admin/leads?${params}`, { headers });
-    setLeads(await res.json());
+    const data = await res.json();
+    setLeads(Array.isArray(data) ? data : []);
   };
 
   const fetchBuyers = async () => {
     const res = await fetch(`${API}/api/admin/buyers`, { headers });
-    setBuyers(await res.json());
+    const data = await res.json();
+    setBuyers(Array.isArray(data) ? data : []);
   };
 
   const fetchLogs = async () => {
     const res = await fetch(`${API}/api/admin/auction-logs`, { headers });
-    setLogs(await res.json());
+    const data = await res.json();
+    setLogs(Array.isArray(data) ? data : []);
   };
 
-  const fetchAll = async () => {
+  const fetchAll = () => {
     setLoading(true);
-    try { await Promise.all([fetchKpi(), fetchLeads(), fetchBuyers(), fetchLogs()]); }
-    catch (e) { console.error(e); }
-    setLoading(false);
+    Promise.all([fetchKpi(), fetchLeads(), fetchBuyers(), fetchLogs()]).finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchAll(); }, []);
   useEffect(() => { fetchLeads(); }, [leadsFilter]);
 
-  const adjustBalance = async (buyerId, amount) => {
+  const addBalance = async (buyerId) => {
+    const amount = parseFloat(balanceInputs[buyerId]);
+    if (!amount || isNaN(amount)) return;
     await fetch(`${API}/api/admin/buyers/${buyerId}/balance`, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: parseFloat(amount), note: 'Manual admin adjustment' })
+      body: JSON.stringify({ amount })
     });
-    fetchBuyers(); fetchKpi();
+    setBalanceInputs(b => ({ ...b, [buyerId]: '' }));
+    fetchBuyers();
+  };
+
+  const toggleBuyerStatus = async (buyerId, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+    await fetch(`${API}/api/admin/buyers/${buyerId}/status`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    fetchBuyers();
   };
 
   const freezeBuyer = async (buyerId) => {
@@ -66,14 +79,27 @@ export default function AdminPortal() {
     fetchBuyers();
   };
 
-  const getExportData = () => {
+  const getFilteredLeads = () => {
+    return leads.filter(l => {
+      if (leadsFilter.status && leadsFilter.status !== 'ALL') {
+        if (l.status?.toLowerCase() !== leadsFilter.status.toLowerCase()) return false;
+      }
+      if (leadsFilter.vertical && leadsFilter.vertical !== 'ALL') {
+        const vert = (l.vertical || l.serviceType || '').toLowerCase();
+        if (!vert.includes(leadsFilter.vertical.toLowerCase())) return false;
+      }
+      return true;
+    });
+  };
+
+  const getExportData = (targetLeads = getFilteredLeads()) => {
     const csvHeaders = [
       'lead_id', 'created_at', 'vertical', 'service_type', 'zip_code',
       'urgency', 'status', 'buyer', 'sold_price', 'return_reason',
       'lead_type', 'appointment_date', 'appointment_time'
     ];
 
-    const rows = leads.map(l => {
+    const rows = targetLeads.map(l => {
       const primaryPurchase = l.purchases && l.purchases[0];
       const buyerName = l.purchases && l.purchases.length > 0
         ? l.purchases.map(p => p.buyer?.name || p.buyerId).join(';')
@@ -101,25 +127,49 @@ export default function AdminPortal() {
     return { csvHeaders, rows };
   };
 
-  const handleExportExcel = () => {
-    if (leads.length === 0) { alert('No leads data to export.'); return; }
-    const { csvHeaders, rows } = getExportData();
+  const handleExportCsv = () => {
+    const target = getFilteredLeads();
+    if (target.length === 0) { alert('No leads data matching filters to export.'); return; }
+    const { csvHeaders, rows } = getExportData(target);
     const formattedRows = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','));
-    // Prepend UTF-8 BOM so Excel opens with automatic column splitting
     const csvString = '\uFEFF' + [csvHeaders.join(','), ...formattedRows].join('\n');
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `unicorn_leads_excel_${Date.now()}.csv`);
+    link.setAttribute('download', `unicorn_leads_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportExcel = () => {
+    const target = getFilteredLeads();
+    if (target.length === 0) { alert('No leads data matching filters to export.'); return; }
+    const { csvHeaders, rows } = getExportData(target);
+    
+    const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n<Worksheet ss:Name="Leads"><Table>\n`;
+    const xmlFooter = `</Table></Worksheet></Workbook>`;
+    
+    const escapeXml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const headerRow = `<Row>` + csvHeaders.map(h => `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`).join('') + `</Row>`;
+    const dataRows = rows.map(r => `<Row>` + r.map(c => `<Cell><Data ss:Type="String">${escapeXml(c)}</Data></Cell>`).join('') + `</Row>`).join('\n');
+
+    const xmlContent = xmlHeader + headerRow + '\n' + dataRows + '\n' + xmlFooter;
+    const blob = new Blob([xmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `unicorn_leads_excel_${Date.now()}.xlsx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const handleCopyGoogleSheets = () => {
-    if (leads.length === 0) { alert('No leads data to copy.'); return; }
-    const { csvHeaders, rows } = getExportData();
+    const target = getFilteredLeads();
+    if (target.length === 0) { alert('No leads data to copy.'); return; }
+    const { csvHeaders, rows } = getExportData(target);
     const tsvString = [csvHeaders.join('\t'), ...rows.map(r => r.join('\t'))].join('\n');
     navigator.clipboard.writeText(tsvString);
     if (window.confirm('✅ Скопировано в буфер обмена!\n\nОткрыть пустую таблицу Google Sheets для вставки (Cmd+V / Ctrl+V)?')) {
@@ -144,13 +194,14 @@ export default function AdminPortal() {
             </button>
           ))}
         </nav>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn-export" style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleExportExcel} title="Export for Microsoft Excel">
-            📊 Excel (.csv)
-          </button>
-          <button className="btn-export" style={{ background: '#059669', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleCopyGoogleSheets} title="Copy data formatted for Google Sheets">
-            🟢 Google Sheets
-          </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <ExportDropdown
+            onExportCsv={handleExportCsv}
+            onExportExcel={handleExportExcel}
+            onExportGoogleSheets={handleCopyGoogleSheets}
+            title="Export Leads"
+            filteredCount={getFilteredLeads().length}
+          />
           <button className="btn-refresh" onClick={fetchAll}>↻ Refresh</button>
         </div>
       </header>
@@ -219,10 +270,10 @@ export default function AdminPortal() {
                       </tr>
                     </thead>
                     <tbody>
-                      {leads.length === 0 && (
-                        <tr><td colSpan={9} style={{textAlign:'center',color:'#666',padding:32}}>No leads yet</td></tr>
+                      {getFilteredLeads().length === 0 && (
+                        <tr><td colSpan={9} style={{textAlign:'center',color:'#666',padding:32}}>No leads match current selection</td></tr>
                       )}
-                      {leads.map(l => (
+                      {getFilteredLeads().map(l => (
                         <tr key={l.id}>
                           <td>#{l.id}</td>
                           <td><strong>{l.name}</strong></td>

@@ -11,7 +11,7 @@ describe('AdminPortal Component', () => {
 
   test('renders navigation tabs', () => {
     render(<AdminPortal />)
-    expect(screen.getByText(/Leads/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Leads/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/Buyers/i)).toBeInTheDocument()
   })
 })

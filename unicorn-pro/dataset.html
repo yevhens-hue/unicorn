@@ -33,7 +33,12 @@
       <h1 style="margin-top: 6px;">📊 Unicorn Pro — Raw Leads Dataset (Червень 2026)</h1>
     </div>
     <div>
-      <a href="dataset.csv" download class="btn btn-green">📥 Завантажити CSV Файл</a>
+      <select id="exportSelect" onchange="handleDatasetExport(this.value)" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; outline: none; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
+        <option value="" disabled selected>📥 Експорт Датасету ▾</option>
+        <option value="csv" style="background: #0f172a; color: #fff;">📄 CSV Файл (.csv)</option>
+        <option value="excel" style="background: #0f172a; color: #fff;">📊 Excel Таблиця (.xlsx)</option>
+        <option value="sheets" style="background: #0f172a; color: #fff;">🟢 Google Sheets ( Скопіювати TSV )</option>
+      </select>
     </div>
   </div>
 
@@ -69,6 +74,39 @@
   </div>
 
   <script>
+    function handleDatasetExport(format) {
+      if (!format) return;
+      if (format === 'csv') {
+        const link = document.createElement('a');
+        link.href = 'dataset.csv';
+        link.download = 'unicorn_pro_dataset.csv';
+        link.click();
+      } else if (format === 'excel') {
+        fetch('dataset.csv').then(r => r.text()).then(text => {
+          const rows = text.trim().split('\n').map(r => r.split(','));
+          const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n<Worksheet ss:Name="Dataset"><Table>\n`;
+          const xmlFooter = `</Table></Worksheet></Workbook>`;
+          const escapeXml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          const xmlRows = rows.map(r => `<Row>` + r.map(c => `<Cell><Data ss:Type="String">${escapeXml(c)}</Data></Cell>`).join('') + `</Row>`).join('\n');
+          const blob = new Blob([xmlHeader + xmlRows + '\n' + xmlFooter], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'unicorn_pro_dataset_excel.xlsx';
+          link.click();
+        });
+      } else if (format === 'sheets') {
+        fetch('dataset.csv').then(r => r.text()).then(text => {
+          const tsv = text.split('\n').map(line => line.split(',').join('\t')).join('\n');
+          navigator.clipboard.writeText(tsv);
+          if (confirm('✅ Скопійовано в буфер обмена!\n\nВідкрити Google Sheets?')) {
+            window.open('https://sheets.new', '_blank');
+          }
+        });
+      }
+      setTimeout(() => { document.getElementById('exportSelect').value = ''; }, 300);
+    }
+
     fetch('dataset.csv')
       .then(res => res.text())
       .then(text => {
