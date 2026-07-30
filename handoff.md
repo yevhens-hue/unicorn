@@ -11,7 +11,7 @@
 | Phase 2 | Prisma schema, Repositories (DAO), Unit-тести (Jest), Ping-Post Engine | ✅ Done |
 | Phase 3 | React 19 / Vite фронтенди (B2C Funnel, B2B Portal, Admin Dashboard) | ✅ Done |
 | Phase 4 | Домени, Vercel Deploy & Excel / Google Sheets Экспорт | ✅ Done |
-| Phase 5 | Інтеграція LM-style (LeadsMarket) аукціону та розширений биллинг | 🔄 In Progress |
+| Phase 5 | Інтеграція LM-style (LeadsMarket) Second-Price (Vickrey) аукціону та биллинг | ✅ Done |
 
 ---
 
