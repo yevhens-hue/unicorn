@@ -1,8 +1,12 @@
+import React from 'react'
 import AdminPortal from './AdminPortal'
+import ErrorBoundary from './ErrorBoundary'
 
 function App() {
   return (
-    <AdminPortal />
+    <ErrorBoundary>
+      <AdminPortal />
+    </ErrorBoundary>
   )
 }
 

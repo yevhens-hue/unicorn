@@ -7,9 +7,11 @@ const API = import.meta.env.VITE_API_URL || 'https://unicorn-pro-api-backend.ver
 const ADMIN_KEY = 'unicorn-admin-2024';
 const headers = { 'x-admin-key': ADMIN_KEY };
 
+const defaultKpi = { totalLeads: 0, totalRevenue: '0.00', fillRate: '0', avgCPL: '0.00', unsoldLeads: 0 };
+
 export default function AdminPortal() {
   const [activeTab, setActiveTab] = useState('kpi');
-  const [kpi, setKpi] = useState(null);
+  const [kpi, setKpi] = useState(defaultKpi);
   const [leads, setLeads] = useState([]);
   const [buyers, setBuyers] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -18,29 +20,60 @@ export default function AdminPortal() {
   const [balanceInputs, setBalanceInputs] = useState({});
 
   const fetchKpi = async () => {
-    const res = await fetch(`${API}/api/admin/kpi`, { headers });
-    setKpi(await res.json());
+    try {
+      const res = await fetch(`${API}/api/admin/kpi`, { headers });
+      const data = await res.json();
+      if (res.ok && data && !data.error) {
+        setKpi({
+          totalLeads: data.totalLeads ?? 0,
+          totalRevenue: data.totalRevenue ?? '0.00',
+          fillRate: data.fillRate ?? '0',
+          avgCPL: data.avgCPL ?? '0.00',
+          unsoldLeads: data.unsoldLeads ?? 0
+        });
+      } else {
+        setKpi(defaultKpi);
+      }
+    } catch (e) {
+      console.error("fetchKpi error:", e);
+      setKpi(defaultKpi);
+    }
   };
 
   const fetchLeads = async () => {
-    const params = new URLSearchParams();
-    if (leadsFilter.status) params.append('status', leadsFilter.status);
-    if (leadsFilter.vertical) params.append('vertical', leadsFilter.vertical);
-    const res = await fetch(`${API}/api/admin/leads?${params}`, { headers });
-    const data = await res.json();
-    setLeads(Array.isArray(data) ? data : []);
+    try {
+      const params = new URLSearchParams();
+      if (leadsFilter.status) params.append('status', leadsFilter.status);
+      if (leadsFilter.vertical) params.append('vertical', leadsFilter.vertical);
+      const res = await fetch(`${API}/api/admin/leads?${params}`, { headers });
+      const data = await res.json();
+      setLeads(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("fetchLeads error:", e);
+      setLeads([]);
+    }
   };
 
   const fetchBuyers = async () => {
-    const res = await fetch(`${API}/api/admin/buyers`, { headers });
-    const data = await res.json();
-    setBuyers(Array.isArray(data) ? data : []);
+    try {
+      const res = await fetch(`${API}/api/admin/buyers`, { headers });
+      const data = await res.json();
+      setBuyers(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("fetchBuyers error:", e);
+      setBuyers([]);
+    }
   };
 
   const fetchLogs = async () => {
-    const res = await fetch(`${API}/api/admin/auction-logs`, { headers });
-    const data = await res.json();
-    setLogs(Array.isArray(data) ? data : []);
+    try {
+      const res = await fetch(`${API}/api/admin/auction-logs`, { headers });
+      const data = await res.json();
+      setLogs(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("fetchLogs error:", e);
+      setLogs([]);
+    }
   };
 
   const fetchAll = () => {
@@ -54,35 +87,49 @@ export default function AdminPortal() {
   const addBalance = async (buyerId) => {
     const amount = parseFloat(balanceInputs[buyerId]);
     if (!amount || isNaN(amount)) return;
-    await fetch(`${API}/api/admin/buyers/${buyerId}/balance`, {
-      method: 'POST',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount })
-    });
-    setBalanceInputs(b => ({ ...b, [buyerId]: '' }));
-    fetchBuyers();
+    try {
+      await fetch(`${API}/api/admin/buyers/${buyerId}/balance`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount })
+      });
+      setBalanceInputs(b => ({ ...b, [buyerId]: '' }));
+      fetchBuyers();
+    } catch (e) {
+      console.error("addBalance error:", e);
+    }
   };
 
   const toggleBuyerStatus = async (buyerId, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'paused' : 'active';
-    await fetch(`${API}/api/admin/buyers/${buyerId}/status`, {
-      method: 'POST',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
-    });
-    fetchBuyers();
+    try {
+      await fetch(`${API}/api/admin/buyers/${buyerId}/status`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      fetchBuyers();
+    } catch (e) {
+      console.error("toggleBuyerStatus error:", e);
+    }
   };
 
   const freezeBuyer = async (buyerId) => {
     if (!window.confirm('Freeze all campaigns for this buyer?')) return;
-    await fetch(`${API}/api/admin/buyers/${buyerId}/freeze`, { method: 'POST', headers });
-    fetchBuyers();
+    try {
+      await fetch(`${API}/api/admin/buyers/${buyerId}/freeze`, { method: 'POST', headers });
+      fetchBuyers();
+    } catch (e) {
+      console.error("freezeBuyer error:", e);
+    }
   };
 
   const getFilteredLeads = () => {
+    if (!Array.isArray(leads)) return [];
     return leads.filter(l => {
+      if (!l) return false;
       if (leadsFilter.status && leadsFilter.status !== 'ALL') {
-        if (l.status?.toLowerCase() !== leadsFilter.status.toLowerCase()) return false;
+        if ((l.status || '').toLowerCase() !== leadsFilter.status.toLowerCase()) return false;
       }
       if (leadsFilter.vertical && leadsFilter.vertical !== 'ALL') {
         const vert = (l.vertical || l.serviceType || '').toLowerCase();
@@ -207,12 +254,12 @@ export default function AdminPortal() {
       </header>
 
       <main className="admin-main">
-        {loading && activeTab === 'kpi' && !kpi ? (
+        {loading ? (
           <div className="admin-loading">Loading data...</div>
         ) : (
           <>
             {/* KPI DASHBOARD */}
-            {activeTab === 'kpi' && kpi && (
+            {activeTab === 'kpi' && (
               <div className="kpi-section">
                 <h2>Platform Overview (CPL + PPA Hybrid Model)</h2>
                 <div className="admin-kpi-grid">
