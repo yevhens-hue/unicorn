@@ -1,9 +1,6 @@
 const request = require('supertest');
 const app = require('../index'); // The express app
 
-// We can mock the PrismaClient and PingPostService if we want pure unit/isolated tests,
-// but for an integration test, we can mock just the processAuction part or use a test DB.
-// Let's mock Prisma to avoid hitting a real DB during testing.
 jest.mock('../src/repositories/CampaignRepository', () => ({
   getActiveMatchingCampaigns: jest.fn().mockResolvedValue([
     {
@@ -34,13 +31,13 @@ describe('POST /api/leads', () => {
         serviceType: 'HVAC',
         zipCode: '10001',
         urgency: 'This Week',
-        address: '123 Main St'
+        address: '123 Main St',
+        tcpa: true
       });
     
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.auctionResult).toBeDefined();
-    // Because of our mock, it should find the $50 Exclusive campaign and win.
     expect(res.body.auctionResult.status).toBe('Exclusive');
   });
 

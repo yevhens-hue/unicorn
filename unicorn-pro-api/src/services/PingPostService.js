@@ -15,16 +15,39 @@ class PingPostService {
   static calculateQualityFactor(lead) {
     let factor = 1.0;
     if (lead.urgency === 'Emergency') factor += 0.5;
-    // can add more rules based on zipCode matching etc.
     return factor;
   }
 
   /**
-   * Process the ping-post auction for a given lead against active campaigns.
+   * Calculate Vickrey Second-Price clearing price.
+   * The winning buyer pays the runner-up's bid + $0.01 increment,
+   * bounded by the winner's submitted maxBid and floor reserve price.
+   * 
+   * @param {number} winningMaxBid - Winner's max bid
+   * @param {number|null} runnerUpMaxBid - Runner-up's max bid (if present)
+   * @param {number} reservePrice - Minimum floor price for vertical
+   * @param {number} increment - Minimum bid increment ($0.01 default)
+   * @returns {number} The second-price cleared price
+   */
+  static calculateSecondPrice(winningMaxBid, runnerUpMaxBid, reservePrice = 25.0, increment = 0.01) {
+    if (!runnerUpMaxBid || runnerUpMaxBid <= 0) {
+      // Single bidder: charge winning maxBid or reserve price if lower
+      return Math.round(Math.max(reservePrice, Math.min(winningMaxBid, reservePrice)) * 100) / 100;
+    }
+    if (winningMaxBid <= runnerUpMaxBid) {
+      return Math.round(winningMaxBid * 100) / 100;
+    }
+    const secondPrice = runnerUpMaxBid + increment;
+    const cleared = Math.max(reservePrice, Math.min(winningMaxBid, secondPrice));
+    return Math.round(cleared * 100) / 100;
+  }
+
+  /**
+   * Process the ping-post auction for a given lead using Second-Price (Vickrey) pricing.
    * 
    * @param {Lead} lead - The lead to process
    * @param {Campaign[]} activeCampaigns - List of all active campaigns
-   * @returns {AuctionResult} The result of the auction
+   * @returns {AuctionResult} The result of the auction including cleared prices
    */
   static processAuction(lead, activeCampaigns) {
     const qFactor = this.calculateQualityFactor(lead);
@@ -41,42 +64,79 @@ class PingPostService {
     });
 
     if (eligible.length === 0) {
-      return { status: 'Unsold', winners: [], maxExclusiveBid: 0, topSharedSum: 0 };
+      return { status: 'Unsold', winners: [], maxExclusiveBid: 0, topSharedSum: 0, auctionType: 'Second-Price (Vickrey)' };
     }
 
-    // 2. Separate Exclusive and Shared, applying quality factor to bids
+    // 2. Separate Exclusive and Shared, sorted descending by adjusted bid
     const exclusive = eligible.filter(c => c.leadType === 'Exclusive' || c.leadType === 'Both')
       .sort((a, b) => (b.maxBid * qFactor) - (a.maxBid * qFactor));
     
     const shared = eligible.filter(c => c.leadType === 'Shared' || c.leadType === 'Both')
       .sort((a, b) => (b.maxBid * qFactor) - (a.maxBid * qFactor));
 
-    // 3. Find top exclusive bid
-    const topExclusive = exclusive.length > 0 ? exclusive[0] : null;
-    const maxExclusiveBid = topExclusive ? topExclusive.maxBid * qFactor : 0;
+    // 3. Calculate top exclusive bid & Vickrey second-price
+    let topExclusive = null;
+    let maxExclusiveBid = 0;
+    let exclusiveClearedPrice = 0;
 
-    // 4. Calculate sum of top 4 shared bids
-    const topShared = shared.slice(0, 4);
-    const topSharedSum = topShared.reduce((sum, c) => sum + (c.maxBid * qFactor), 0);
+    if (exclusive.length > 0) {
+      const winner = exclusive[0];
+      const runnerUp = exclusive.length > 1 ? exclusive[1] : null;
+      const runnerUpBid = runnerUp ? runnerUp.maxBid : null;
+      
+      const clearedPrice = this.calculateSecondPrice(winner.maxBid, runnerUpBid, 30.0);
+      
+      topExclusive = {
+        ...winner,
+        submittedBid: winner.maxBid,
+        clearedPrice: clearedPrice
+      };
+      maxExclusiveBid = winner.maxBid * qFactor;
+      exclusiveClearedPrice = clearedPrice * qFactor;
+    }
 
-    // 5. Compare and decide winner
+    // 4. Calculate top 4 shared bids & Vickrey second-price for each winner
+    const topSharedRaw = shared.slice(0, 4);
+    let topSharedSum = 0;
+    let topSharedClearedSum = 0;
+
+    const topShared = topSharedRaw.map((winner, idx) => {
+      const runnerUp = shared[idx + 1] || null;
+      const runnerUpBid = runnerUp ? runnerUp.maxBid : null;
+      const clearedPrice = this.calculateSecondPrice(winner.maxBid, runnerUpBid, 15.0);
+
+      topSharedSum += winner.maxBid * qFactor;
+      topSharedClearedSum += clearedPrice * qFactor;
+
+      return {
+        ...winner,
+        submittedBid: winner.maxBid,
+        clearedPrice: clearedPrice
+      };
+    });
+
+    // 5. Compare Exclusive vs Shared and decide winner
     if (topExclusive && maxExclusiveBid >= topSharedSum) {
       return {
         status: 'Exclusive',
         winners: [topExclusive],
         maxExclusiveBid,
-        topSharedSum
+        topSharedSum,
+        auctionType: 'Second-Price (Vickrey)',
+        clearedRevenue: exclusiveClearedPrice
       };
     } else if (topShared.length > 0) {
       return {
         status: 'Shared',
         winners: topShared,
         maxExclusiveBid,
-        topSharedSum
+        topSharedSum,
+        auctionType: 'Second-Price (Vickrey)',
+        clearedRevenue: topSharedClearedSum
       };
     }
 
-    return { status: 'Unsold', winners: [], maxExclusiveBid: 0, topSharedSum: 0 };
+    return { status: 'Unsold', winners: [], maxExclusiveBid: 0, topSharedSum: 0, auctionType: 'Second-Price (Vickrey)' };
   }
 }
 

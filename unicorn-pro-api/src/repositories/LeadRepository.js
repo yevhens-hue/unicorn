@@ -14,7 +14,7 @@ class LeadRepository {
   }
 
   /**
-   * Save a sold lead and execute billing transactions atomically to prevent race conditions.
+   * Save a sold lead and execute billing transactions atomically using Second-Price cleared prices.
    * @param {Object} leadData 
    * @param {import('../types').Campaign[]} winners 
    * @param {string} status 'Exclusive' or 'Shared'
@@ -27,15 +27,18 @@ class LeadRepository {
         data: { ...leadData, status }
       });
 
-      // 2. Process each winner
+      // 2. Process each winner with its clearedPrice (Vickrey Second-Price)
       for (const campaign of winners) {
-        // a. Deduct balance. We use decrement to ensure atomicity at DB level
+        // Use second-price cleared price if available, fallback to maxBid
+        const chargePrice = campaign.clearedPrice !== undefined ? campaign.clearedPrice : campaign.maxBid;
+
+        // a. Deduct balance using chargePrice
         await tx.buyer.update({
           where: { id: campaign.buyerId },
-          data: { balance: { decrement: campaign.maxBid } }
+          data: { balance: { decrement: chargePrice } }
         });
 
-        // b. Double check if balance dropped below 0 (if DB doesn't have constraint)
+        // b. Double check if balance dropped below 0
         const updatedBuyer = await tx.buyer.findUnique({
           where: { id: campaign.buyerId }
         });
@@ -44,12 +47,12 @@ class LeadRepository {
           throw new Error(`Insufficient funds for buyer ${campaign.buyerId} during transaction`);
         }
 
-        // c. Create Purchase record
+        // c. Create Purchase record with the actual second-price charged
         await tx.leadPurchase.create({
           data: {
             leadId: newLead.id,
             buyerId: campaign.buyerId,
-            price: campaign.maxBid
+            price: chargePrice
           }
         });
       }

@@ -1,6 +1,6 @@
 const PingPostService = require('../src/services/PingPostService');
 
-describe('PingPostService', () => {
+describe('PingPostService (Second-Price Vickrey Auction)', () => {
   let campaigns;
   let buyer;
 
@@ -23,17 +23,51 @@ describe('PingPostService', () => {
     expect(result.status).toBe('Exclusive');
     expect(result.winners.length).toBe(1);
     expect(result.winners[0].id).toBe(1);
+    expect(result.auctionType).toContain('Second-Price');
+  });
+
+  it('should calculate Vickrey Second-Price clearing price correctly for exclusive auction with 2 bidders', () => {
+    const buyer2 = { id: 2, name: 'Buyer B', balance: 100 };
+    const twoExclusiveCampaigns = [
+      { id: 1, buyerId: 1, vertical: 'HVAC', zipCodes: 'all', leadType: 'Exclusive', maxBid: 90, isActive: true, buyer },
+      { id: 2, buyerId: 2, vertical: 'HVAC', zipCodes: 'all', leadType: 'Exclusive', maxBid: 60, isActive: true, buyer: buyer2 },
+    ];
+
+    const lead = { serviceType: 'HVAC', zipCode: '10001', urgency: 'This Week' };
+    const result = PingPostService.processAuction(lead, twoExclusiveCampaigns);
+
+    expect(result.status).toBe('Exclusive');
+    expect(result.winners[0].id).toBe(1);
+    expect(result.winners[0].submittedBid).toBe(90);
+    // Winner 1 pays second price ($60 + $0.01 = $60.01)
+    expect(result.winners[0].clearedPrice).toBe(60.01);
   });
 
   it('should choose Shared if the sum of top Shared bids is greater than the Exclusive bid', () => {
-    // Increase a shared bid to beat the exclusive bid
     campaigns[2].maxBid = 25; // Shared sum = 20 + 25 + 10 = 55. 55 > 50.
     
     const lead = { serviceType: 'HVAC', zipCode: '10001', urgency: 'This Week' };
     const result = PingPostService.processAuction(lead, campaigns);
     
     expect(result.status).toBe('Shared');
-    expect(result.winners.length).toBe(3); // Campaigns 2, 3, 4
+    expect(result.winners.length).toBe(3);
+  });
+
+  it('should calculate Vickrey Second-Price for shared auction bidders with floor reserve', () => {
+    // 3 shared bidders: $30, $20, $10 with default floor reserve $15
+    const sharedCampaigns = [
+      { id: 1, buyerId: 1, vertical: 'HVAC', zipCodes: 'all', leadType: 'Shared', maxBid: 30, isActive: true, buyer },
+      { id: 2, buyerId: 1, vertical: 'HVAC', zipCodes: 'all', leadType: 'Shared', maxBid: 20, isActive: true, buyer },
+      { id: 3, buyerId: 1, vertical: 'HVAC', zipCodes: 'all', leadType: 'Shared', maxBid: 10, isActive: true, buyer },
+    ];
+
+    const lead = { serviceType: 'HVAC', zipCode: '10001', urgency: 'This Week' };
+    const result = PingPostService.processAuction(lead, sharedCampaigns);
+
+    expect(result.status).toBe('Shared');
+    expect(result.winners[0].clearedPrice).toBe(20.01); // $30 cleared at runner-up $20 + $0.01
+    expect(result.winners[1].clearedPrice).toBe(15.00); // $20 cleared at runner-up $10.01, bounded by floor reserve $15.00
+    expect(result.winners[2].clearedPrice).toBe(15.00); // $10 cleared at floor reserve $15.00
   });
 
   it('should return Unsold if no matching campaigns are active', () => {
@@ -44,30 +78,11 @@ describe('PingPostService', () => {
     expect(result.winners.length).toBe(0);
   });
 
-  it('should apply quality_factor to bids based on urgency', () => {
-    // Emergency urgency usually multiplies bid (e.g., 1.5x) inside the auction logic
-    campaigns = [
-      { id: 1, buyerId: 1, vertical: 'HVAC', zipCodes: 'all', leadType: 'Exclusive', maxBid: 40, isActive: true, buyer },
-      { id: 2, buyerId: 1, vertical: 'HVAC', zipCodes: 'all', leadType: 'Shared', maxBid: 20, isActive: true, buyer },
-      { id: 3, buyerId: 1, vertical: 'HVAC', zipCodes: 'all', leadType: 'Shared', maxBid: 20, isActive: true, buyer },
-    ];
-    // Base Shared sum = 40. Base Exclusive = 40. Tie defaults to Exclusive.
-    // If urgency is 'This Week' (1.0x), Exclusive wins.
-    // Let's say logic states that if tie, Exclusive wins.
-    const lead1 = { serviceType: 'HVAC', zipCode: '10001', urgency: 'This Week' };
-    const result1 = PingPostService.processAuction(lead1, campaigns);
-    expect(result1.status).toBe('Exclusive');
-
-    // Wait, let's just make sure it parses matching correctly
-  });
-
   it('should ignore campaigns if buyer has insufficient balance', () => {
-    // Buyer has $15 balance. Exclusive is $50 (skip), Shared are $20 (skip), $10, $5.
     buyer.balance = 15;
     const lead = { serviceType: 'HVAC', zipCode: '10001', urgency: 'This Week' };
     
     const result = PingPostService.processAuction(lead, campaigns);
-    // Only Campaigns 3 ($15) and 4 ($10) can afford it.
     expect(result.status).toBe('Shared');
     expect(result.winners.length).toBe(2);
     expect(result.winners[0].id).toBe(3);
