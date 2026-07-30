@@ -18,6 +18,7 @@ export default function AdminPortal() {
   const [loading, setLoading] = useState(true);
   const [leadsFilter, setLeadsFilter] = useState({ status: '', vertical: '' });
   const [balanceInputs, setBalanceInputs] = useState({});
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   const fetchKpi = async () => {
     try {
@@ -338,9 +339,9 @@ export default function AdminPortal() {
                               <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Pending Call Center</span>
                             )}
                           </td>
-                          <td><span className={`status-pill status-${l.status.toLowerCase()}`}>{l.status}</span></td>
+                          <td><span className={`status-pill status-${(l.status || '').toLowerCase()}`}>{l.status || 'Sold'}</span></td>
                           <td>{l.purchases?.length || 0}</td>
-                          <td>{new Date(l.createdAt).toLocaleDateString()}</td>
+                          <td>{new Date(l.createdAt || Date.now()).toLocaleDateString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -370,7 +371,7 @@ export default function AdminPortal() {
                           <td>#{b.id}</td>
                           <td><strong>{b.name}</strong></td>
                           <td style={{fontSize:12,color:'#888'}}>{b.email}</td>
-                          <td><strong style={{color:'#10b981'}}>${Number(b.balance).toFixed(2)}</strong></td>
+                          <td><strong style={{color:'#10b981'}}>${Number(b.balance || 0).toFixed(2)}</strong></td>
                           <td>{b._count?.purchases ?? 0}</td>
                           <td>{b.campaigns?.filter(c => c.isActive).length ?? 0}</td>
                           <td>
@@ -381,7 +382,7 @@ export default function AdminPortal() {
                                 value={balanceInputs[b.id] || ''}
                                 onChange={e => setBalanceInputs(bi => ({ ...bi, [b.id]: e.target.value }))}
                               />
-                              <button className="btn-sm" onClick={() => { adjustBalance(b.id, balanceInputs[b.id] || 0); setBalanceInputs(bi => ({ ...bi, [b.id]: '' })); }}>
+                              <button className="btn-sm" onClick={() => addBalance(b.id)}>
                                 Apply
                               </button>
                             </div>
