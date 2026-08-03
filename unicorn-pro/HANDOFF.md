@@ -67,14 +67,3 @@ cd unicorn-pro && npx surge ./ yevhen-unicorn-test.surge.sh
 
 ## 🔒 Стан сесії
 Сесію успішно збережено. Усі зміни закомічені у файли проєкту та задеплоєні на **[yevhen-unicorn-test.surge.sh](https://yevhen-unicorn-test.surge.sh)**.
-
----
-
-## 🤖 Експерименти: Unicorn AI Agent (Copilot)
-В рамках тестування архітектури мульти-агентних систем (на основі Upwork специфікації Alfred), розроблено прототип Майстер-Агента:
-- **Директорія:** `unicorn-agent/`
-- **Файли:** `master_agent.py` (ядро/orchestrator), `skills.py` (ізольовані інструменти), `.env.example` (сховище секретів).
-- **Стек:** Python, pyTelegramBotAPI, LLM Tool Calling pattern.
-- **Статус:** Код готовий до тестування в CLI-режимі. Для інтеграції з Telegram потрібно додати `TELEGRAM_BOT_TOKEN` у `.env`.
-
-> Останнє оновлення сесії: 2026-08-03T23:44:00+02:00

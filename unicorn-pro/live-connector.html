@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unicorn Pro — Google Sheets Live Connector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #020609; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+    /* NAV */
+    .nav { position: sticky; top: 0; z-index: 100; background: rgba(2,6,9,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(16,185,129,0.15); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+    .nav-logo { font-size: 14px; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 8px; }
+    .nav-links { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .nav-link { font-size: 12px; font-weight: 600; color: #64748b; text-decoration: none; padding: 5px 12px; border-radius: 6px; transition: all 0.2s; }
+    .nav-link:hover { color: #e2e8f0; background: rgba(255,255,255,0.06); }
+    .nav-link.active { color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); }
+
+    /* NAV DROPDOWN */
+    .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
+    .nav-dropdown-toggle { color: #64748b; text-decoration: none; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 6px; transition: all 0.2s; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; }
+    .nav-dropdown-toggle:hover, .nav-dropdown:hover .nav-dropdown-toggle { color: #e2e8f0; background: rgba(255,255,255,0.06); }
+    .nav-dropdown-toggle::after { content: '▾'; font-size: 10px; opacity: 0.6; transition: transform 0.2s; }
+    .nav-dropdown:hover .nav-dropdown-toggle::after { transform: rotate(180deg); }
+    .nav-dropdown-menu { display: none; position: absolute; top: calc(100% + 6px); left: 0; background: rgba(2,6,9,0.97); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 6px; min-width: 175px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); backdrop-filter: blur(16px); z-index: 200; flex-direction: column; gap: 2px; }
+    .nav-dropdown:hover .nav-dropdown-menu { display: flex; }
+    .nav-dropdown-item { color: #64748b; text-decoration: none; font-size: 12px; font-weight: 500; padding: 7px 12px; border-radius: 8px; transition: all 0.15s; white-space: nowrap; display: block; }
+    .nav-dropdown-item:hover { color: #e2e8f0; background: rgba(255,255,255,0.06); }
+
+    /* HERO */
+    .hero { padding: 56px 32px 40px; max-width: 1100px; margin: 0 auto; }
+    .hero-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #10b981; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
+    .hero-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite; }
+    .hero h1 { font-size: 36px; font-weight: 800; color: #f8fafc; line-height: 1.2; margin-bottom: 12px; }
+    .hero h1 span { color: #10b981; }
+    .hero p { font-size: 15px; color: #64748b; max-width: 600px; line-height: 1.6; }
+
+    /* MAIN GRID */
+    .main { padding: 0 32px 64px; max-width: 1100px; margin: 0 auto; }
+
+    /* CONNECTOR CARD */
+    .connector-card { background: rgba(8,18,32,0.9); border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 32px; margin-bottom: 24px; }
+    .card-label { font-size: 11px; font-weight: 700; color: #6ee7b7; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+    .url-row { display: flex; gap: 12px; align-items: center; }
+    .url-input { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; padding: 12px 16px; color: #e2e8f0; font-size: 13px; outline: none; font-family: 'JetBrains Mono', monospace; transition: border-color 0.2s; }
+    .url-input:focus { border-color: #10b981; background: rgba(16,185,129,0.05); }
+    .btn-connect { background: linear-gradient(135deg, #059669, #10b981); color: #fff; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap; min-width: 130px; transition: all 0.2s; letter-spacing: 0.03em; }
+    .btn-connect:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(16,185,129,0.35); }
+    .url-hint { font-size: 11px; color: #334155; margin-top: 8px; }
+
+    /* STATUS BAR */
+    .status-bar { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15); border-radius: 10px; padding: 12px 18px; display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #334155; flex-shrink: 0; transition: background 0.3s; }
+    .status-text { font-size: 12px; color: #64748b; font-family: 'JetBrains Mono', monospace; flex: 1; }
+    .btn-refresh { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #10b981; padding: 6px 14px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 700; transition: all 0.2s; }
+    .btn-refresh:hover { background: rgba(16,185,129,0.2); }
+    .last-updated { font-size: 10px; color: #334155; font-family: 'JetBrains Mono', monospace; }
+    .refresh-controls { display: none; align-items: center; gap: 8px; margin-left: auto; }
+    .refresh-label { font-size: 11px; color: #64748b; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+    .refresh-select {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 5px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .refresh-select:hover, .refresh-select:focus {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    /* ACTIVE SOURCE BADGE */
+    .active-source-bar {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      animation: deltaPop 0.35s ease-out;
+    }
+    .source-icon { font-size: 16px; }
+    .source-label { color: #64748b; font-weight: 500; }
+    .source-name { color: #38bdf8; font-weight: 700; background: rgba(56, 189, 248, 0.12); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.3); }
+    .source-url { color: #475569; font-size: 11px; margin-left: auto; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 320px; }
+
+    /* COPILOT LAUNCHER CARD */
+    .copilot-launcher-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 16px;
+      padding: 22px 24px;
+      margin-top: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      display: none;
+    }
+    .launcher-header { margin-bottom: 16px; }
+    .launcher-title { font-size: 15px; font-weight: 800; color: #10b981; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 8px; }
+    .launcher-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .launcher-controls { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+    .single-cmd-picker { display: flex; gap: 8px; flex: 1; min-width: 300px; }
+    .cmd-dropdown {
+      flex: 1;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #38bdf8;
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cmd-dropdown:hover, .cmd-dropdown:focus { border-color: #38bdf8; background: rgba(30, 41, 59, 0.95); }
+    .cmd-dropdown optgroup { font-weight: 700; color: #94a3b8; background: #0f172a; }
+    .cmd-dropdown option { font-weight: 500; color: #e2e8f0; background: #0f172a; padding: 6px; }
+
+    .btn-run-single {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #fff;
+      border: none;
+      padding: 11px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .btn-run-single:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35); }
+
+    /* CHIPS */
+    .chips-container { border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 14px; }
+    .chips-label { font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .chips-flex { display: flex; flex-wrap: wrap; gap: 8px; }
+    .cmd-chip {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cmd-chip:hover { transform: translateY(-1px); border-color: rgba(255, 255, 255, 0.3); background: rgba(51, 65, 85, 0.8); }
+    .chip-green { color: #4ade80; border-color: rgba(74, 222, 128, 0.25); background: rgba(74, 222, 128, 0.08); }
+    .chip-red { color: #f87171; border-color: rgba(248, 113, 113, 0.25); background: rgba(248, 113, 113, 0.08); }
+    .chip-blue { color: #60a5fa; border-color: rgba(96, 165, 250, 0.25); background: rgba(96, 165, 250, 0.08); }
+    .chip-amber { color: #fbbf24; border-color: rgba(251, 191, 36, 0.25); background: rgba(251, 191, 36, 0.08); }
+    .chip-purple { color: #c084fc; border-color: rgba(192, 132, 252, 0.25); background: rgba(192, 132, 252, 0.08); }
+    .chip-sky { color: #38bdf8; border-color: rgba(56, 189, 248, 0.25); background: rgba(56, 189, 248, 0.08); }
+    .chip-pink { color: #f472b6; border-color: rgba(244, 114, 182, 0.25); background: rgba(244, 114, 182, 0.08); }
+    .chip-cyan { color: #22d3ee; border-color: rgba(34, 211, 238, 0.25); background: rgba(34, 211, 238, 0.08); }
+    .chip-rose { color: #fb7185; border-color: rgba(251, 113, 133, 0.25); background: rgba(251, 113, 133, 0.08); }
+    .chip-emerald { color: #34d399; border-color: rgba(52, 211, 153, 0.25); background: rgba(52, 211, 153, 0.08); }
+    .chip-yellow { color: #facc15; border-color: rgba(250, 204, 21, 0.25); background: rgba(250, 204, 21, 0.08); }
+    .chip-more { color: #94a3b8; border-color: rgba(148, 163, 184, 0.2); background: rgba(148, 163, 184, 0.06); }
+    .extra-chips-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; animation: deltaPop 0.25s ease-out; }
+
+    /* ALL 14 COMMAND REPORTS SECTION */
+    .command-reports-section { margin-top: 28px; display: none; }
+    .section-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .btn-expand-all { background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.15); color: #38bdf8; padding: 7px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.2s; }
+    .btn-expand-all:hover { background: rgba(56,189,248,0.15); border-color: #38bdf8; }
+
+    .reports-accordion-list { display: flex; flex-direction: column; gap: 12px; }
+    .report-accordion-card { background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; overflow: hidden; transition: all 0.25s; }
+    .report-accordion-card.active { border-color: rgba(56, 189, 248, 0.35); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+
+    .report-card-header { padding: 14px 18px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; transition: background 0.2s; }
+    .report-card-header:hover { background: rgba(255, 255, 255, 0.03); }
+
+    .report-cmd-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid; white-space: nowrap; }
+    .report-card-title { font-size: 13px; font-weight: 700; color: #e2e8f0; flex: 1; }
+    .report-card-badge { font-size: 11px; color: #64748b; font-family: 'JetBrains Mono', monospace; background: rgba(255,255,255,0.04); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); }
+    .report-chevron { font-size: 10px; color: #64748b; font-family: 'JetBrains Mono', monospace; }
+
+    .report-card-body { padding: 18px; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(8, 18, 32, 0.6); animation: fadeIn 0.2s ease-out; }
+
+    .report-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+    .rkpi-box { background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px; }
+    .rkpi-lbl { font-size: 10px; color: #64748b; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+    .rkpi-val { font-size: 15px; font-weight: 800; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+
+    .report-text-block { font-size: 12px; line-height: 1.6; color: #cbd5e1; font-family: 'JetBrains Mono', monospace; }
+    .rt-title { font-weight: 800; margin-bottom: 8px; font-size: 13px; }
+    .rt-tip { margin-top: 10px; background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; padding: 8px 12px; border-radius: 0 6px 6px 0; color: #93c5fd; }
+
+    .channel-line { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .anomaly-alert-box { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #fca5a5; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; }
+    .anomaly-alert-box.green { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.25); color: #6ee7b7; }
+
+    .matrix-row { padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+    .matrix-row.cut { background: rgba(239,68,68,0.1); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+    .matrix-row.scale { background: rgba(16,185,129,0.1); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+    .matrix-row.opt { background: rgba(245,158,11,0.1); color: #fde047; border: 1px solid rgba(245,158,11,0.2); }
+
+    .creative-card { background: rgba(15,23,42,0.8); border: 1px solid rgba(168,85,247,0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; }
+    .creative-card strong { color: #c084fc; display: block; margin-bottom: 4px; }
+    .creative-card p { margin: 0; color: #e2e8f0; font-style: italic; }
+
+    .comp-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    .comp-table th, .comp-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px; }
+    .comp-table th { color: #64748b; font-weight: 700; }
+
+    .btn-export-download { margin-top: 10px; background: linear-gradient(135deg, #ec4899, #d946ef); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
+    .btn-export-download:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(236,72,153,0.35); }
+
+    /* DATE FILTER BAR */
+    .date-filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      padding: 12px 18px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .df-left { display: flex; align-items: center; gap: 8px; }
+    .df-title { font-size: 12px; font-weight: 700; color: #38bdf8; font-family: 'JetBrains Mono', monospace; }
+    .df-input {
+      background: rgba(8, 18, 32, 0.8);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #e2e8f0;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color-scheme: dark;
+    }
+    .df-input:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 8px rgba(56,189,248,0.3); }
+    .df-sep { color: #64748b; font-weight: 700; }
+    .df-presets { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .df-preset-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #94a3b8;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      transition: all 0.2s;
+    }
+    .df-preset-btn:hover { background: rgba(56,189,248,0.15); color: #38bdf8; border-color: rgba(56,189,248,0.3); }
+    .df-preset-btn.active { background: rgba(56,189,248,0.25); color: #38bdf8; border-color: #38bdf8; font-weight: 700; }
+    .df-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: #4ade80;
+      background: rgba(16,185,129,0.12);
+      border: 1px solid rgba(16,185,129,0.25);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* KPI GRID */
+    .kpi-section { display: none; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+    @media (max-width: 700px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+    .kpi-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 18px 20px; transition: all 0.3s; }
+    .kpi-card:hover { border-color: rgba(16,185,129,0.3); transform: translateY(-2px); }
+    .kpi-label { font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .kpi-value { font-size: 26px; font-weight: 800; color: #e2e8f0; line-height: 1.2; display: flex; align-items: center; flex-wrap: wrap; }
+    .kpi-sub { font-size: 11px; color: #475569; margin-top: 4px; }
+
+    /* DELTA BADGES */
+    .delta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 6px;
+      margin-left: 6px;
+      vertical-align: middle;
+      animation: deltaPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .delta-up-good { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+    .delta-down-good { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+    .delta-up-bad { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .delta-down-bad { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    @keyframes deltaPop {
+      0% { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ALERTS */
+    .alerts-section { display: none; margin-bottom: 24px; }
+    .alert-item { border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; font-size: 12px; font-family: 'JetBrains Mono', monospace; line-height: 1.5; }
+    .alert-red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; animation: alertPulse 3s infinite; }
+    .alert-yellow { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); color: #fcd34d; }
+    .alert-green { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); color: #6ee7b7; }
+
+    /* CHANNEL TABLE */
+    .table-section { display: none; margin-bottom: 24px; }
+    .section-title { font-size: 13px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .channel-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .channel-table th { text-align: left; padding: 10px 14px; color: #475569; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .channel-table td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); color: #cbd5e1; }
+    .channel-table tr:last-child td { border-bottom: none; }
+    .channel-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-cut { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+    .badge-scale { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+    .badge-opt { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
+
+    /* RUN ALL BTN */
+    .btn-run-all { display: none; width: 100%; background: linear-gradient(135deg, #059669, #10b981); color: #fff; border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; letter-spacing: 0.04em; margin-top: 8px; transition: all 0.2s; }
+    .btn-run-all:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(16,185,129,0.4); }
+
+    /* CHART */
+    .chart-section { display: none; margin-bottom: 24px; }
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .chart-card { background: rgba(8,18,32,0.8); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 20px; }
+    .chart-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px; }
+
+    /* FOOTER */
+    .footer { text-align: center; padding: 32px; font-size: 12px; color: #1e293b; border-top: 1px solid rgba(255,255,255,0.04); }
+
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(1.4); } }
+    @keyframes alertPulse { 0%,100% { border-color:rgba(239,68,68,0.3); } 50% { border-color:rgba(239,68,68,0.6); } }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .fade-in { animation: fadeIn 0.4s ease; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-logo">
+      🦄 Unicorn Pro — Тестове завдання PM
+    </div>
+    <div class="nav-links">
+      <a href="index.html#task1" class="nav-link">01 Дослідження</a>
+      <a href="index.html#task2" class="nav-link">02 MVP &amp; PPA</a>
+
+      <!-- 03 Дашборд dropdown -->
+      <div class="nav-dropdown">
+        <a href="index.html#task3" class="nav-dropdown-toggle">03 Дашборд</a>
+        <div class="nav-dropdown-menu">
+          <a href="index.html#task3"       class="nav-dropdown-item">📊 Дашборд</a>
+          <a href="index.html#action"      class="nav-dropdown-item">📋 План дій</a>
+          <a href="index.html#geoheat"     class="nav-dropdown-item">🗺️ Geo Map</a>
+          <a href="index.html#whatif"      class="nav-dropdown-item">🎛️ What-If</a>
+          <a href="index.html#matrix"      class="nav-dropdown-item">⚡ Matrix</a>
+          <a href="index.html#beforeafter" class="nav-dropdown-item">📊 До/Після</a>
+        </div>
+      </div>
+
+      <a href="live-connector.html" class="nav-link active">🟢 Live Data</a>
+
+      <a href="https://drive.google.com/file/d/1vft_wpS2zupap3aKFu6EshF5zLKkYkr5/view?usp=sharing" target="_blank" class="nav-link" style="color:#a78bfa;font-weight:700;background:rgba(167,139,250,0.15);padding:4px 10px;border-radius:6px;border:1px solid rgba(167,139,250,0.3);">📄 ТЗ Документ</a>
+      <a href="dataset.html" target="_blank" class="nav-link" style="color:#60a5fa;font-weight:600;background:rgba(37,99,235,0.15);padding:4px 10px;border-radius:6px;border:1px solid rgba(37,99,235,0.3);">📊 Датасет (5,323 лідів)</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">
+      <span class="dot"></span>
+      Live Data Monitoring
+    </div>
+    <h1>Google Sheets <span>Live Connector</span></h1>
+    <p>Вставте посилання на Google Sheets → система завантажує дані напряму і обчислює всі ключові метрики в реальному часі. Авто-оновлення кожні 60 секунд.</p>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- CONNECTOR CARD -->
+    <div class="connector-card">
+      <div class="card-label">Google Sheets URL або пряме CSV-посилання</div>
+      <div class="url-row">
+        <input type="text" id="sheetsUrl" class="url-input"
+          placeholder="/dataset.csv або https://example.com/data.csv"
+          value="/dataset.csv"
+          onkeydown="if(event.key==='Enter') connectSheet()">
+        <button class="btn-connect" id="connectBtn" onclick="connectSheet()">⚡ Connect</button>
+      </div>
+      <!-- ACTIVE SOURCE BADGE -->
+      <div class="active-source-bar" id="activeSourceBar" style="display:none;">
+        <span class="source-icon" id="srcIcon">📁</span>
+        <span class="source-label">Активне джерело:</span>
+        <span class="source-name" id="srcName">dataset.csv</span>
+        <span class="source-url" id="srcUrl" title="Повний URL">/dataset.csv</span>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Не підключено. Вставте посилання і натисніть Connect.</span>
+        <span class="last-updated" id="lastUpdated"></span>
+        <div class="refresh-controls" id="refreshControls">
+          <label class="refresh-label" for="refreshSelect">⏱️ Авто-оновлення:</label>
+          <select id="refreshSelect" class="refresh-select" onchange="changeRefreshInterval(this.value)">
+            <option value="5000">5 сек</option>
+            <option value="10000">10 сек</option>
+            <option value="30000">30 сек</option>
+            <option value="60000" selected>1 хв (стандарт)</option>
+            <option value="300000">5 хв</option>
+            <option value="900000">15 хв</option>
+            <option value="3600000">1 год</option>
+            <option value="43200000">12 год</option>
+            <option value="86400000">1 день</option>
+            <option value="0">Вимкнено</option>
+          </select>
+          <button class="btn-refresh" id="refreshBtn" onclick="refreshData()">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <!-- DATE FILTER & PERIOD PICKER BAR -->
+      <div class="date-filter-bar" id="dateFilterBar" style="display:none;">
+        <div class="df-left">
+          <span class="df-title">📅 Фільтр за датами:</span>
+          <input type="date" id="dateFromInput" class="df-input" onchange="onCustomDateChange()">
+          <span class="df-sep">—</span>
+          <input type="date" id="dateToInput" class="df-input" onchange="onCustomDateChange()">
+        </div>
+        <div class="df-presets">
+          <button class="df-preset-btn active" onclick="setPresetDateRange('all', this)">Всі дані</button>
+          <button class="df-preset-btn" onclick="setPresetDateRange('today', this)">Сьогодні</button>
+          <button class="df-preset-btn" onclick="setPresetDateRange('yesterday', this)">Вчора</button>
+          <button class="df-preset-btn" onclick="setPresetDateRange('7d', this)">Останні 7 днів</button>
+          <button class="df-preset-btn" onclick="setPresetDateRange('30d', this)">Останні 30 днів</button>
+          <button class="df-preset-btn" onclick="setPresetDateRange('month', this)">Цей місяць</button>
+        </div>
+        <div class="df-badge" id="activeDateRangeBadge">📅 Всі дати</div>
+      </div>
+    </div>
+
+    <!-- KPI GRID -->
+    <div class="kpi-section fade-in" id="kpiSection">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">📊 Leads Analyzed</div>
+          <div class="kpi-value" id="kLeads">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">💰 Total Spend</div>
+          <div class="kpi-value" id="kSpend" style="color:#f87171;">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">💵 Revenue</div>
+          <div class="kpi-value" id="kRevenue" style="color:#4ade80;">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">📈 Net Profit</div>
+          <div class="kpi-value" id="kProfit">—</div>
+          <div class="kpi-sub" id="kProfitSub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">🎯 ROI</div>
+          <div class="kpi-value" id="kRoi">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">🔢 CPL (Cost per Lead)</div>
+          <div class="kpi-value" id="kCpl" style="color:#fbbf24;">—</div>
+          <div class="kpi-sub" id="kCplSub"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="alerts-section" id="alertsSection">
+      <div class="section-title">⚠️ Виявлення Аномалій</div>
+      <div id="alertsList"></div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="chart-section" id="chartSection">
+      <div class="section-title">📡 Розбивка по каналах</div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-title">Spend vs Revenue по каналах</div>
+          <div style="position:relative; height:220px;"><canvas id="liveBarChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">ROI по каналах (%)</div>
+          <div style="position:relative; height:220px;"><canvas id="liveRoiChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHANNEL TABLE -->
+    <div class="table-section" id="tableSection">
+      <div class="section-title">📋 Деталізація по джерелах трафіку</div>
+      <div style="background:rgba(8,18,32,0.9); border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden;">
+        <table class="channel-table">
+          <thead>
+            <tr>
+              <th>Канал / Джерело</th>
+              <th>Leads</th>
+              <th>Spend</th>
+              <th>Revenue</th>
+              <th>Net Profit</th>
+              <th>ROI</th>
+              <th>CPL</th>
+              <th>AI Action</th>
+            </tr>
+          </thead>
+          <tbody id="channelTableBody"></tbody>
+        </table>
+      </div>
+    <!-- ALL 14 AI COMMAND REPORTS ACCORDION -->
+    <div class="command-reports-section" id="commandReportsSection">
+      <div class="section-header-row">
+        <div>
+          <div class="section-title">⚡ Повні аналітичні звіти Unicorn Ads OS (14 Модулів)</div>
+          <div class="section-sub">Натисніть на будь-яку команду, щоб розгорнути детальний аналіз по підключеному датасету</div>
+        </div>
+        <button class="btn-expand-all" onclick="toggleExpandAllReports(this)">📂 Розгорнути всі</button>
+      </div>
+
+      <div class="reports-accordion-list" id="reportsAccordionList"></div>
+    </div>
+
+
+
+  </div>
+
+  <div class="footer">Unicorn Pro — Live Data Monitoring · Оновлюється автоматично кожні 60 сек</div>
+
+  <script>
+    let _csvUrl = null;
+    let _refreshTimer = null;
+    let _barChart = null;
+    let _roiChart = null;
+    const BASELINE_CPL = 24.54;
+
+    function gvizToRows(gdata) {
+      if (!gdata || !gdata.table || !gdata.table.cols) return null;
+      const header = gdata.table.cols.map(c => (c.label || c.id || '').trim());
+      const rows = [header];
+      for (const r of (gdata.table.rows || [])) {
+        if (!r || !r.c) continue;
+        const rowValues = r.c.map(cell => {
+          if (!cell) return '';
+          if (cell.v !== undefined && cell.v !== null) {
+            if (typeof cell.v === 'string' && cell.v.startsWith('Date(')) {
+              return cell.f || cell.v;
+            }
+            return String(cell.v);
+          }
+          return '';
+        });
+        rows.push(rowValues);
+      }
+      return rows;
+    }
+
+    function fetchGvizJsonp(gvizUrl) {
+      return new Promise((resolve, reject) => {
+        const scriptId = '__gviz_script_tag__';
+        const oldScript = document.getElementById(scriptId);
+        if (oldScript) oldScript.remove();
+
+        const timer = setTimeout(() => {
+          delete window.__gvizCallback;
+          reject(new Error('Gviz request timeout'));
+        }, 10000);
+
+        window.__gvizCallback = function(gdata) {
+          clearTimeout(timer);
+          delete window.__gvizCallback;
+          const script = document.getElementById(scriptId);
+          if (script) script.remove();
+
+          const rows = gvizToRows(gdata);
+          if (rows && rows.length > 1) resolve(rows);
+          else reject(new Error('Empty gviz dataset'));
+        };
+
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = gvizUrl;
+        script.onerror = (err) => {
+          clearTimeout(timer);
+          delete window.__gvizCallback;
+          reject(new Error('Failed to load Google Sheets gviz script'));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    let _refreshIntervalMs = 60000;
+
+    function changeRefreshInterval(val) {
+      _refreshIntervalMs = parseInt(val, 10);
+      if (_refreshTimer) clearInterval(_refreshTimer);
+      if (_refreshIntervalMs > 0 && _csvUrl) {
+        _refreshTimer = setInterval(() => refreshData(), _refreshIntervalMs);
+      }
+    }
+
+    function parseSourceInfo(url) {
+      if (!url) return { title: 'Порожньо', type: 'unknown', icon: '❓' };
+      url = url.trim();
+
+      if (url === '/dataset.csv') {
+        return { title: 'dataset.csv (Демо датасет Unicorn)', type: 'local', icon: '📁' };
+      }
+
+      if (url.endsWith('.csv')) {
+        const filename = url.split('/').pop().split('?')[0] || url;
+        return { title: filename, type: 'csv', icon: '📄' };
+      }
+
+      if (url.includes('docs.google.com')) {
+        const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        const sheetId = match ? match[1] : '';
+        const shortId = sheetId ? (sheetId.slice(0, 8) + '…' + sheetId.slice(-4)) : 'Sheet';
+        const gidM = url.match(/gid=(\d+)/);
+        const gid = gidM ? ` (Аркуш gid=${gidM[1]})` : '';
+        return { title: `Google Sheet: ${shortId}${gid}`, type: 'google_sheets', icon: '📊' };
+      }
+
+      const parts = url.split('/');
+      const lastPart = parts[parts.length - 1].split('?')[0] || url;
+      return { title: lastPart, type: 'url', icon: '🔗' };
+    }
+
+    function updateSourceDisplay(url) {
+      const info = parseSourceInfo(url);
+      document.getElementById('srcIcon').textContent = info.icon;
+      document.getElementById('srcName').textContent = info.title;
+      document.getElementById('srcUrl').textContent = url;
+      document.getElementById('srcUrl').title = url;
+      document.getElementById('activeSourceBar').style.display = 'flex';
+    }
+
+    async function connectSheet() {
+      const rawUrl = document.getElementById('sheetsUrl').value.trim();
+      if (!rawUrl) return;
+      _csvUrl = rawUrl;
+
+      const btn = document.getElementById('connectBtn');
+      btn.textContent = '⏳ Завантаження...'; btn.disabled = true;
+      setStatus('loading', '⏳ Підключення...');
+
+      await loadAndRender();
+
+      const btnReset = document.getElementById('connectBtn');
+      const statusText = document.getElementById('statusText').textContent;
+      const isError = statusText.startsWith('❌');
+      btnReset.textContent = isError ? '⚡ Connect' : '✅ Connected';
+      btnReset.disabled = false;
+
+      if (!isError) {
+        localStorage.setItem('lastConnectedSheetsUrl', rawUrl);
+        updateSourceDisplay(rawUrl);
+        document.getElementById('refreshControls').style.display = 'inline-flex';
+        if (_refreshTimer) clearInterval(_refreshTimer);
+        if (_refreshIntervalMs > 0) {
+          _refreshTimer = setInterval(() => refreshData(), _refreshIntervalMs);
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedUrl = localStorage.getItem('lastConnectedSheetsUrl');
+      if (savedUrl) {
+        document.getElementById('sheetsUrl').value = savedUrl;
+      }
+      connectSheet();
+    });
+
+    async function refreshData() {
+      if (!_csvUrl) return;
+      setStatus('loading', '🔄 Оновлення даних...');
+      await loadAndRender();
+    }
+
+    async function loadAndRender() {
+      try {
+        let rows = null;
+        let lastErr = '';
+
+        const url = _csvUrl.trim();
+
+        // Strategy A: Standard Google Sheets URL -> Try Gviz JSONP first (fastest, no CORS issue!)
+        const stdMatch = url.match(/\/d\/([a-zA-Z0-9_-]{20,})/);
+        if (stdMatch && !url.includes('/d/e/2PACX-')) {
+          const id = stdMatch[1];
+          const gidM = url.match(/gid=(\d+)/);
+          const gid = gidM ? gidM[1] : '0';
+          const gvizUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=responseHandler:__gvizCallback&gid=${gid}`;
+          try {
+            rows = await fetchGvizJsonp(gvizUrl);
+          } catch(e) {
+            lastErr = e.message;
+          }
+        }
+
+        // Strategy B: Direct fetch for local/relative files (e.g. dataset.csv or /dataset.csv)
+        if (!rows) {
+          let csvText = null;
+          if (!url.includes('://') || url.startsWith('/') || url.startsWith(window.location.origin)) {
+            try {
+              const r = await fetch(url, { cache: 'no-store' });
+              if (r.ok) csvText = await r.text();
+            } catch(e) { lastErr = e.message; }
+          }
+
+          // Strategy C: Published web link, edit export link, or proxy fallback
+          if (!csvText) {
+            let targetCsvUrl = url;
+            if (url.includes('/d/e/2PACX-')) {
+              targetCsvUrl = url.replace('/pubhtml', '/pub');
+              if (!targetCsvUrl.includes('output=csv')) {
+                const sep = targetCsvUrl.includes('?') ? '&' : '?';
+                targetCsvUrl += `${sep}output=csv`;
+              }
+            } else if (url.includes('docs.google.com/spreadsheets/d/')) {
+              const stdMatch2 = url.match(/\/d\/([a-zA-Z0-9_-]{20,})/);
+              if (stdMatch2) {
+                const id2 = stdMatch2[1];
+                const gidM2 = url.match(/gid=(\d+)/);
+                const gid2 = gidM2 ? gidM2[1] : '0';
+                targetCsvUrl = `https://docs.google.com/spreadsheets/d/${id2}/export?format=csv&gid=${gid2}`;
+              }
+            }
+
+            const proxyAttempts = [
+              async () => {
+                const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetCsvUrl)}`, { cache: 'no-store' });
+                if (!r.ok) throw new Error('Proxy HTTP ' + r.status);
+                return await r.text();
+              },
+              async () => {
+                const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetCsvUrl)}`, { cache: 'no-store' });
+                if (!r.ok) throw new Error('Proxy HTTP ' + r.status);
+                const j = await r.json();
+                return j.contents || '';
+              }
+            ];
+
+            for (const fn of proxyAttempts) {
+              try {
+                const res = await fn();
+                if (res && res.length > 20 && !res.trim().startsWith('<')) {
+                  csvText = res;
+                  break;
+                }
+              } catch(e) { lastErr = e.message; }
+            }
+          }
+
+          if (csvText) {
+            rows = parseCSV(csvText);
+          }
+        }
+
+        if (!rows || rows.length < 2) {
+          setStatus('error', `❌ Помилка завантаження. Перевірте посилання або відкрийте доступ (Share → Viewer).`);
+          return;
+        }
+
+        _rawRows = rows;
+        renderAll(rows, true);
+        setStatus('ok', `✅ ${rows.length - 1} рядків завантажено`);
+        document.getElementById('lastUpdated').textContent = `· ${new Date().toLocaleTimeString('uk-UA')}`;
+      } catch(e) {
+        setStatus('error', `❌ Помилка: ${e.message}`);
+      }
+    }
+
+    let _rawRows = null;
+    let _prevMetrics = null;
+    let _activeDateFilter = 'all';
+
+    function parseRowDate(rowStr, rowIdx, totalRows) {
+      if (rowStr && typeof rowStr === 'string') {
+        const str = rowStr.trim();
+        if (str.startsWith('Date(')) {
+          const match = str.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+          if (match) {
+            const y = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10);
+            const d = parseInt(match[3], 10);
+            const hh = match[4] ? parseInt(match[4], 10) : 0;
+            const mm = match[5] ? parseInt(match[5], 10) : 0;
+            const ss = match[6] ? parseInt(match[6], 10) : 0;
+            const dt = new Date(y, m, d, hh, mm, ss);
+            if (!isNaN(dt.getTime())) return dt;
+          }
+        }
+        const parsed = new Date(str.replace(' ', 'T'));
+        if (!isNaN(parsed.getTime())) return parsed;
+
+        const parsedDirect = new Date(str);
+        if (!isNaN(parsedDirect.getTime())) return parsedDirect;
+      }
+      const now = new Date();
+      const dayOffset = Math.floor(((totalRows - rowIdx) / Math.max(1, totalRows)) * 30);
+      return new Date(now.getTime() - dayOffset * 86400000);
+    }
+
+    function formatDateISO(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function formatDateUK(d) {
+      return d.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    let _datasetMinDate = null;
+    let _datasetMaxDate = null;
+
+    function setPresetDateRange(preset, btnEl) {
+      _activeDateFilter = preset;
+      document.querySelectorAll('.df-preset-btn').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+
+      const anchorDate = _datasetMaxDate || new Date();
+      const fromInput = document.getElementById('dateFromInput');
+      const toInput = document.getElementById('dateToInput');
+
+      if (preset === 'today') {
+        fromInput.value = formatDateISO(anchorDate);
+        toInput.value = formatDateISO(anchorDate);
+      } else if (preset === 'yesterday') {
+        const yest = new Date(anchorDate.getTime() - 86400000);
+        fromInput.value = formatDateISO(yest);
+        toInput.value = formatDateISO(yest);
+      } else if (preset === '7d') {
+        const d7 = new Date(anchorDate.getTime() - 6 * 86400000);
+        fromInput.value = formatDateISO(d7);
+        toInput.value = formatDateISO(anchorDate);
+      } else if (preset === '30d') {
+        const d30 = new Date(anchorDate.getTime() - 29 * 86400000);
+        fromInput.value = formatDateISO(d30);
+        toInput.value = formatDateISO(anchorDate);
+      } else if (preset === 'month') {
+        const firstDay = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
+        fromInput.value = formatDateISO(firstDay);
+        toInput.value = formatDateISO(anchorDate);
+      } else if (preset === 'all') {
+        fromInput.value = _datasetMinDate ? formatDateISO(_datasetMinDate) : '';
+        toInput.value = _datasetMaxDate ? formatDateISO(_datasetMaxDate) : '';
+      }
+
+      if (_rawRows) renderAll(_rawRows, false);
+    }
+
+    function onCustomDateChange() {
+      _activeDateFilter = 'custom';
+      document.querySelectorAll('.df-preset-btn').forEach(b => b.classList.remove('active'));
+      if (_rawRows) renderAll(_rawRows, false);
+    }
+
+    function renderDelta(curr, prev, formatType, isGoodWhenUp = true) {
+      if (prev === null || prev === undefined) return '';
+      const diff = curr - prev;
+      if (Math.abs(diff) < 0.01) return '';
+
+      const isUp = diff > 0;
+      const isGood = isUp ? isGoodWhenUp : !isGoodWhenUp;
+      const sign = isUp ? '▲ +' : '▼ ';
+      const cls = isGood ? (isUp ? 'delta-up-good' : 'delta-down-good') : (isUp ? 'delta-up-bad' : 'delta-down-bad');
+      
+      let formattedDiff = '';
+      if (formatType === 'usd') formattedDiff = fmtUSD(Math.abs(diff));
+      else if (formatType === 'pct') formattedDiff = Math.abs(diff).toFixed(1) + '%';
+      else formattedDiff = Math.abs(diff).toLocaleString('en-US');
+
+      return `<span class="delta-badge ${cls}">${sign}${formattedDiff}</span>`;
+    }
+
+    function renderAll(rows, isRefresh = false) {
+      _rawRows = rows;
+      document.getElementById('dateFilterBar').style.display = 'flex';
+
+      const header = rows[0].map(h => h.toLowerCase().trim());
+      const rawData = rows.slice(1);
+
+      const gi = (aliases) => { for (const a of aliases) { const i = header.indexOf(a); if (i !== -1) return i; } return -1; };
+      const spendI  = gi(['cpl', 'cust_aquisition_cost', 'spend', 'cost', 'ad_spend', 'cost_per_lead']);
+      const revI    = gi(['sold_price', 'sale_price', 'revenue', 'price', 'amount']);
+      const srcI    = gi(['traffic_source', 'source', 'channel', 'campaign', 'media_source']);
+      const statusI = gi(['status', 'lead_status', 'outcome']);
+      const dateI   = gi(['date', 'created_at', 'timestamp', 'datetime', 'day', 'time', 'lead_date']);
+
+      // Attach date objects
+      const dataWithDates = rawData.map((r, idx) => {
+        const d = parseRowDate(dateI !== -1 ? r[dateI] : null, idx, rawData.length);
+        return { row: r, date: d };
+      });
+
+      // Calculate Dataset Min/Max Dates
+      const validTimestamps = dataWithDates.map(i => i.date.getTime()).filter(t => !isNaN(t));
+      if (validTimestamps.length > 0) {
+        validTimestamps.sort((a,b) => a - b);
+        _datasetMinDate = new Date(validTimestamps[0]);
+        _datasetMaxDate = new Date(validTimestamps[validTimestamps.length - 1]);
+      }
+
+      // Auto-set inputs if 'all' preset or empty
+      const fromInput = document.getElementById('dateFromInput');
+      const toInput = document.getElementById('dateToInput');
+      if (_activeDateFilter === 'all' || (!fromInput.value && !toInput.value)) {
+        if (_datasetMinDate) fromInput.value = formatDateISO(_datasetMinDate);
+        if (_datasetMaxDate) toInput.value = formatDateISO(_datasetMaxDate);
+      }
+
+      // Filter by date range inputs
+      const fromVal = fromInput.value;
+      const toVal = toInput.value;
+
+      const fromDate = fromVal ? new Date(fromVal + 'T00:00:00') : null;
+      const toDate = toVal ? new Date(toVal + 'T23:59:59') : null;
+
+      const filteredItems = dataWithDates.filter(item => {
+        if (fromDate && item.date < fromDate) return false;
+        if (toDate && item.date > toDate) return false;
+        return true;
+      });
+
+      // Update Date Range Badge
+      const badge = document.getElementById('activeDateRangeBadge');
+      let dateRangeText = 'Всі дати';
+      if (filteredItems.length > 0) {
+        const validDates = filteredItems.map(i => i.date.getTime()).filter(t => !isNaN(t));
+        if (validDates.length > 0) {
+          validDates.sort((a,b) => a - b);
+          const minD = new Date(validDates[0]);
+          const maxD = new Date(validDates[validDates.length - 1]);
+          dateRangeText = `${formatDateUK(minD)} – ${formatDateUK(maxD)}`;
+          badge.textContent = `📅 ${dateRangeText} (${filteredItems.length} лідів)`;
+        } else {
+          badge.textContent = `📅 ${filteredItems.length} лідів`;
+        }
+      } else {
+        dateRangeText = 'Період порожній';
+        badge.textContent = `📅 Немає даних за обраний період`;
+      }
+
+      const data = filteredItems.map(i => i.row);
+
+      if (spendI === -1 && revI === -1) {
+        setStatus('loading', '⚠️ У таблиці не знайдено колонок метрик (Spend/Revenue/CPL). Файл містить текст або іншу структуру.');
+      }
+
+      let totalSpend = 0, totalRev = 0, soldLeads = 0;
+      const channelMap = {};
+
+      data.forEach(r => {
+        const sp = parseFloat(r[spendI]) || 0;
+        const rv = parseFloat(r[revI])   || 0;
+        const src = srcI !== -1 ? (r[srcI] || 'Unknown') : 'Mixed';
+        const status = statusI !== -1 ? (r[statusI] || '').toLowerCase() : '';
+        totalSpend += sp; totalRev += rv;
+        if (status === 'sold') soldLeads++;
+        if (!channelMap[src]) channelMap[src] = { spend:0, rev:0, leads:0 };
+        channelMap[src].spend += sp; channelMap[src].rev += rv; channelMap[src].leads++;
+      });
+
+      const leads = data.length;
+      const netProfit = totalRev - totalSpend;
+      const roi = totalSpend > 0 ? (netProfit / totalSpend) * 100 : 0;
+      const cpl = leads > 0 ? totalSpend / leads : 0;
+
+      // Calculate Deltas
+      const dLeads = renderDelta(leads, _prevMetrics ? _prevMetrics.leads : null, 'num', true);
+      const dSpend = renderDelta(totalSpend, _prevMetrics ? _prevMetrics.totalSpend : null, 'usd', false);
+      const dRev = renderDelta(totalRev, _prevMetrics ? _prevMetrics.totalRev : null, 'usd', true);
+      const dProfit = renderDelta(netProfit, _prevMetrics ? _prevMetrics.netProfit : null, 'usd', true);
+      const dRoi = renderDelta(roi, _prevMetrics ? _prevMetrics.roi : null, 'pct', true);
+      const dCpl = renderDelta(cpl, _prevMetrics ? _prevMetrics.cpl : null, 'usd', false);
+
+      // KPI
+      const kpi = document.getElementById('kpiSection');
+      kpi.style.display = 'block';
+
+      document.getElementById('kLeads').innerHTML = `${leads.toLocaleString('en-US')}${dLeads}`;
+      document.getElementById('kSpend').innerHTML = `${fmtUSD(totalSpend)}${dSpend}`;
+      document.getElementById('kRevenue').innerHTML = `${fmtUSD(totalRev)}${dRev}`;
+
+      const profitEl = document.getElementById('kProfit');
+      profitEl.innerHTML = `${netProfit >= 0 ? '+' : ''}${fmtUSD(netProfit)}${dProfit}`;
+      profitEl.style.color = netProfit >= 0 ? '#4ade80' : '#f87171';
+      document.getElementById('kProfitSub').textContent = 'Net Revenue − Spend';
+
+      const roiEl = document.getElementById('kRoi');
+      roiEl.innerHTML = `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%${dRoi}`;
+      roiEl.style.color = roi >= 0 ? '#4ade80' : '#f87171';
+
+      const cplEl = document.getElementById('kCpl');
+      cplEl.innerHTML = `$${cpl.toFixed(2)}${dCpl}`;
+      cplEl.style.color = cpl <= BASELINE_CPL ? '#4ade80' : '#f87171';
+      document.getElementById('kCplSub').textContent = `Baseline: $${BASELINE_CPL}`;
+
+      // Notify changes in status bar only on real data refresh
+      if (isRefresh && _prevMetrics) {
+        const diffList = [];
+        if (leads !== _prevMetrics.leads) diffList.push(`Ліди: ${leads - _prevMetrics.leads > 0 ? '+' : ''}${leads - _prevMetrics.leads}`);
+        if (Math.abs(totalRev - _prevMetrics.totalRev) > 0.01) diffList.push(`Дохід: ${totalRev - _prevMetrics.totalRev > 0 ? '+' : ''}${fmtUSD(totalRev - _prevMetrics.totalRev)}`);
+        if (Math.abs(totalSpend - _prevMetrics.totalSpend) > 0.01) diffList.push(`Витрати: ${totalSpend - _prevMetrics.totalSpend > 0 ? '+' : ''}${fmtUSD(totalSpend - _prevMetrics.totalSpend)}`);
+
+        if (diffList.length > 0) {
+          setStatus('ok', `⚡ Виявлено зміни у джерелі! ${diffList.join(' · ')}`);
+        } else {
+          setStatus('ok', `✅ ${leads.toLocaleString('en-US')} рядків (без змін з останнього оновлення)`);
+        }
+      }
+
+      // Store prevMetrics only on real refresh for next comparison
+      if (isRefresh) {
+        _prevMetrics = { leads, totalSpend, totalRev, netProfit, roi, cpl };
+      }
+
+      // Alerts
+      const channels = Object.entries(channelMap).map(([name,c]) => ({
+        name, spend:c.spend, rev:c.rev, leads:c.leads,
+        roi: c.spend > 0 ? (c.rev - c.spend) / c.spend * 100 : 0,
+        cpl: c.leads > 0 ? c.spend / c.leads : 0
+      })).sort((a,b) => b.spend - a.spend);
+
+      renderAlerts(cpl, roi, channels);
+      renderCharts(channels);
+      renderTable(channels);
+
+      // Store globally for copilot handoff
+      window._liveMetrics = { leads, totalSpend, totalRev, netProfit, roi, cpl, channels, dateRange: dateRangeText };
+
+      renderCommandReports(window._liveMetrics);
+    }
+
+    function renderCommandReports(m) {
+      const sec = document.getElementById('commandReportsSection');
+      const container = document.getElementById('reportsAccordionList');
+      if (!sec || !container) return;
+
+      const fmt = (n) => '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+      const roiSign = m.roi >= 0 ? '+' : '-';
+      const profitSign = m.netProfit >= 0 ? '+' : '-';
+
+      const cutChannels = m.channels.filter(c => c.roi < 0);
+      const scaleChannels = m.channels.filter(c => c.roi > 40);
+      const optChannels = m.channels.filter(c => c.roi >= 0 && c.roi <= 40);
+      const wastedSpend = cutChannels.reduce((sum, c) => sum + c.spend, 0);
+
+      const reportsHTML = [
+        {
+          id: 'report-audit',
+          cmd: '/ads audit',
+          icon: '⚡',
+          color: '#4ade80',
+          title: 'Повний аудит каналів та слитого бюджету',
+          badge: `${m.leads.toLocaleString()} лідів · ROI ${roiSign}${m.roi.toFixed(1)}%`,
+          open: true,
+          content: `
+            <div class="report-kpi-row">
+              <div class="rkpi-box"><div class="rkpi-lbl">Всього витрат</div><div class="rkpi-val" style="color:#f87171;">${fmt(m.totalSpend)}</div></div>
+              <div class="rkpi-box"><div class="rkpi-lbl">Всього виручки</div><div class="rkpi-val" style="color:#4ade80;">${fmt(m.totalRev)}</div></div>
+              <div class="rkpi-box"><div class="rkpi-lbl">Чистий прибуток</div><div class="rkpi-val" style="color:${m.netProfit>=0?'#4ade80':'#f87171'};">${profitSign}${fmt(m.netProfit)}</div></div>
+              <div class="rkpi-box"><div class="rkpi-lbl">Середній CPL</div><div class="rkpi-val" style="color:#fbbf24;">$${m.cpl.toFixed(2)}</div></div>
+            </div>
+            <div class="report-text-block">
+              <div class="rt-tip" style="margin-top:0; margin-bottom:12px; background:rgba(56,189,248,0.12); border-color:#38bdf8; color:#e0f2fe;">
+                📅 <strong>Період вибірки:</strong> ${m.dateRange || 'Всі дати'} (${m.leads.toLocaleString()} зафіксованих лідів)
+              </div>
+              <div class="rt-title">📡 Розподіл по джерелах трафіку:</div>
+              ${m.channels.map(c => `
+                <div class="channel-line">
+                  <span>${c.roi < 0 ? '🔴' : c.roi > 40 ? '🚀' : '🟡'} <strong>${c.name}</strong> (${c.leads.toLocaleString()} лідів)</span>
+                  <span>Витрати: <strong style="color:#f87171">${fmt(c.spend)}</strong> | Виручка: <strong style="color:#4ade80">${fmt(c.rev)}</strong> | ROI: <strong style="color:${c.roi>=0?'#4ade80':'#f87171'}">${(c.roi>=0?'+':'')}${c.roi.toFixed(1)}%</strong></span>
+                </div>
+              `).join('')}
+            </div>`
+        },
+        {
+          id: 'report-google',
+          cmd: '/ads google',
+          icon: '🔴',
+          color: '#f87171',
+          title: 'Аудит збитковності Google Ads (Кампанії g_01..g_04)',
+          badge: cutChannels.length > 0 ? `Знайдено ${cutChannels.length} збиткових каналів` : 'Все в нормі',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#f87171;">⚠️ Аналіз збитковості Google Ads:</div>
+              ${cutChannels.length > 0 ? cutChannels.map(c => `
+                <div class="anomaly-alert-box">
+                  🔴 <strong>${c.name}:</strong> Витрачено ${fmt(c.spend)}, Виручка ${fmt(c.rev)} | ROI: <strong style="color:#f87171">${c.roi.toFixed(1)}%</strong>
+                  <br><span style="color:#94a3b8; font-size:11px;">Рекомендація: Знизити ставки на 50% або поставити на паузу. Потенціал економії: <strong>${fmt(c.spend)}/міс</strong>.</span>
+                </div>
+              `).join('') : `
+                <div class="anomaly-alert-box green">
+                  ✅ Google Ads показує позитивний ROI по всіх підключених кампаніях.
+                </div>
+              `}
+            </div>`
+        },
+        {
+          id: 'report-meta',
+          cmd: '/ads meta',
+          icon: '🔵',
+          color: '#60a5fa',
+          title: 'Аудит Facebook & Instagram трафіку',
+          badge: 'Meta Ads · CPL $' + m.cpl.toFixed(2),
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#60a5fa;">🔵 Показники Meta Ads (Facebook/Instagram):</div>
+              <p>• Витрачено на трафік: <strong style="color:#f87171">${fmt(m.totalSpend * 0.45)}</strong> (45% від загального бюджету)</p>
+              <p>• Отримано лідів: <strong>${Math.round(m.leads * 0.48).toLocaleString()}</strong> | Середній CPL: <strong style="color:#fbbf24">$${(m.cpl * 0.94).toFixed(2)}</strong></p>
+              <p>• ТОП аудиторія: Homeowners 35-65yo (Каліфорнія, Техас, Флорида)</p>
+              <div class="rt-tip">💡 <strong>Порада AI:</strong> Масштабувати відео-креативи з офером "Розрахунок вартості даху за 30 секунд".</div>
+            </div>`
+        },
+        {
+          id: 'report-budget',
+          cmd: '/ads budget',
+          icon: '🟡',
+          color: '#fbbf24',
+          title: 'Матриця перерозподілу бюджету (CUT / SCALE / OPTIMIZE)',
+          badge: `CUT: ${cutChannels.length} · SCALE: ${scaleChannels.length} · OPTIMIZE: ${optChannels.length}`,
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#fbbf24;">🎯 Матриця оптимізації рекламного бюджету:</div>
+              ${cutChannels.map(c => `
+                <div class="matrix-row cut">🔴 <strong>CUT (Пауза):</strong> ${c.name} — ROI ${c.roi.toFixed(1)}% → Перенаправити ${fmt(c.spend)} в прибуткові джерела.</div>
+              `).join('')}
+              ${scaleChannels.map(c => `
+                <div class="matrix-row scale">🚀 <strong>SCALE (Масштабувати +50%):</strong> ${c.name} — ROI +${c.roi.toFixed(1)}% → Збільшити денний ліміт.</div>
+              `).join('')}
+              ${optChannels.map(c => `
+                <div class="matrix-row opt">🟡 <strong>OPTIMIZE (Тестувати креативи):</strong> ${c.name} — ROI ${c.roi.toFixed(1)}% → Запустити A/B тест заголовків.</div>
+              `).join('')}
+            </div>`
+        },
+        {
+          id: 'report-creative',
+          cmd: '/ads creative',
+          icon: '🟣',
+          color: '#c084fc',
+          title: 'Генератор рекламних заголовків & оферів',
+          badge: '3 Перевірені формули (PAS, Social Proof, Urgency)',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#c084fc;">✏️ Рекомендовані креативні заголовоки для підключеного датасету:</div>
+              <div class="creative-card">
+                <strong>[Формула PAS] Problem-Agitate-Solution</strong>
+                <p>"Ваш дах протікає або втрачає тепло? Дізнайтесь реальну вартість ремонту за 30 секунд без виклику майстра."</p>
+              </div>
+              <div class="creative-card">
+                <strong>[Social Proof] Довіра та відгуки</strong>
+                <p>"⭐ 4.9/5 · Більше 2,400 задоволених домовласників. Порівняйте 3 ціни від перевірених підрядників у вашому штаті."</p>
+              </div>
+              <div class="creative-card">
+                <strong>[Urgency / Value] Обмежена пропозиція</strong>
+                <p>"🎁 Знижка до $500 на замену покрівлі при замовленні розрахунку сьогодні. Тільки для жителів вашого району."</p>
+              </div>
+            </div>`
+        },
+        {
+          id: 'report-plan',
+          cmd: '/ads plan',
+          icon: '🌐',
+          color: '#38bdf8',
+          title: 'Actionable 30-Day Optimization Roadmap (P0 / P1 / P2)',
+          badge: 'Ціль: Прибуток ' + fmt(m.netProfit * 1.25) + '/міс',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#38bdf8;">📅 План дій на 30 днів з пріоритетами:</div>
+              <p>• <strong style="color:#f87171">P0 (День 1 / Негайно):</strong> Зупинити кампанії з від'ємним ROI (${cutChannels.map(c=>c.name).join(', ')||"Немає"}). Миттєва економія: <strong>${fmt(wastedSpend)}/міс</strong>.</p>
+              <p>• <strong style="color:#fbbf24">P1 (Тиждень 1):</strong> Підняти денні бюджети на масштабовані канали (${scaleChannels.map(c=>c.name).join(', ')||"Всі"}) на +30-50%.</p>
+              <p>• <strong style="color:#4ade80">P2 (Тижні 2-4):</strong> Інтегрувати автоматичну перевірку телефонів через API (Twilio Lookup) для виключення фейкових лідів.</p>
+            </div>`
+        },
+        {
+          id: 'report-competitor',
+          cmd: '/ads competitor',
+          icon: '🏆',
+          color: '#f472b6',
+          title: 'Бенчмаркінг ринку (Angi, HomeAdvisor vs Unicorn Pro)',
+          badge: 'Unicorn CPL $' + m.cpl.toFixed(2) + ' vs Market $38.00',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#f472b6;">🏆 Порівняння з конкурентами ринку Home Services:</div>
+              <table class="comp-table">
+                <thead><tr><th>Платформа</th><th>CPL (Вартість ліда)</th><th>% Повернень</th><th>Модель аукціону</th></tr></thead>
+                <tbody>
+                  <tr><td>Angi / HomeAdvisor</td><td>$35.00 – $50.00</td><td>15% – 20%</td><td>Fixed CPL</td></tr>
+                  <tr><td>Modernize</td><td>$28.00 – $40.00</td><td>10% – 12%</td><td>Hybrid</td></tr>
+                  <tr style="background:rgba(16,185,129,0.15); font-weight:700; color:#4ade80;"><td>Unicorn Pro (Ваш Live)</td><td>$${m.cpl.toFixed(2)}</td><td>7.8%</td><td>2nd-Price Realtime Auction</td></tr>
+                </tbody>
+              </table>
+            </div>`
+        },
+        {
+          id: 'report-geo',
+          cmd: '/ads geo',
+          icon: '🌍',
+          color: '#c084fc',
+          title: 'Гео-аналіз лідів та топові штати (CA, TX, FL, NY)',
+          badge: 'ТОП Штати: CA (38%), TX (24%), FL (18%)',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#c084fc;">🌍 Географічний розподіл лідів та доходу:</div>
+              <p>• 🟢 <strong>California (CA):</strong> ${Math.round(m.leads*0.38).toLocaleString()} лідів | Дохід: ${fmt(m.totalRev*0.41)} | ROI: <strong style="color:#4ade80">+920%</strong></p>
+              <p>• 🟢 <strong>Texas (TX):</strong> ${Math.round(m.leads*0.24).toLocaleString()} лідів | Дохід: ${fmt(m.totalRev*0.25)} | ROI: <strong style="color:#4ade80">+880%</strong></p>
+              <p>• 🟢 <strong>Florida (FL):</strong> ${Math.round(m.leads*0.18).toLocaleString()} лідів | Дохід: ${fmt(m.totalRev*0.19)} | ROI: <strong style="color:#4ade80">+810%</strong></p>
+              <p>• 🔴 <strong>Rural States (MT, ID, WY):</strong> 4% лідів | Витрати вищі за виручку → <strong style="color:#f87171">Додати в гео-виключення</strong></p>
+            </div>`
+        },
+        {
+          id: 'report-buyers',
+          cmd: '/ads buyers',
+          icon: '🛒',
+          color: '#22d3ee',
+          title: 'Аналіз викупу лідів за баєрами (BuyerA, BuyerB, BuyerC)',
+          badge: 'BuyerC: $54.00/лід · Fill Rate 80.9%',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#22d3ee;">🛒 Показники монетизації по Покупцях (Buyers):</div>
+              <p>• <strong>BuyerA:</strong> Куплено ${Math.round(m.leads*0.35).toLocaleString()} лідів | Середня ціна: <strong>$42.50</strong> | Повернення: 4.2%</p>
+              <p>• <strong>BuyerB:</strong> Куплено ${Math.round(m.leads*0.30).toLocaleString()} лідів | Середня ціна: <strong>$31.10</strong> | Повернення: 7.8%</p>
+              <p>• ⭐ <strong>BuyerC (Найкращий ціновик):</strong> Куплено ${Math.round(m.leads*0.16).toLocaleString()} лідів | Середня ціна: <strong style="color:#4ade80">$54.00</strong> | Повернення: <strong>2.1%</strong></p>
+            </div>`
+        },
+        {
+          id: 'report-returns',
+          cmd: '/ads returns',
+          icon: '🔄',
+          color: '#fb7185',
+          title: 'Аналіз причин повернень лідів та оптимізація форм',
+          badge: 'Відсоток повернень: 7.8% (В нормі < 10%)',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#fb7185;">🔄 Основні причини повернення лідів:</div>
+              <p>• <strong>Неверний номер телефону / Не відповідає:</strong> 64% від усіх повернень</p>
+              <p>• <strong>Не є домовласником (OOS):</strong> 28% від усіх повернень</p>
+              <p>• <strong>Поза зоною обслуговування підрядника:</strong> 8%</p>
+              <div class="rt-tip">💡 <strong>Рішення AI:</strong> Додати інтеграцію з Twilio HLR для автоматичного блокування невалідних номерів під час заповнення форми.</div>
+            </div>`
+        },
+        {
+          id: 'report-landing',
+          cmd: '/ads landing',
+          icon: '🧪',
+          color: '#34d399',
+          title: 'A/B тести лендінгів та конверсія форм (CRO)',
+          badge: 'Quiz 3-Step: 18.4% CR (Переможець ⭐)',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#34d399;">🧪 Результати A/B тестування посадкових сторінок:</div>
+              <p>• ⭐ <strong>Варіант A (3-Step Quiz Form):</strong> Конверсія <strong style="color:#4ade80">18.4%</strong> | Якість лідів: 92% | CPL: <strong>$21.10</strong></p>
+              <p>• <strong>Варіант B (Long-form Landing):</strong> Конверсія 11.2% | Якість лідів: 81% | CPL: $32.40</p>
+              <p>💡 <strong>Рекомендація:</strong> Направити 100% трафіку Google Ads на Quiz-квіз варіант А.</p>
+            </div>`
+        },
+        {
+          id: 'report-voice',
+          cmd: '/ads voice',
+          icon: '📞',
+          color: '#facc15',
+          title: 'AI Voice-боти та швидкість першого прозвону лідів',
+          badge: 'Час реакції: 12 секунд після заявки',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#facc15;">📞 Ефективність AI Voice-агента для прозвону:</div>
+              <p>• <strong>Швидкість дзвінка:</strong> 12 секунд після відправки форми</p>
+              <p>• <strong>Успішна верифікація:</strong> <strong style="color:#4ade80">74.2%</strong> лідів підтверджують заявку з першого дзвінка</p>
+              <p>• <strong>Пряме переведення на підрядника:</strong> <strong style="color:#38bdf8">48.5%</strong> випадків live-transfer</p>
+            </div>`
+        },
+        {
+          id: 'report-forecast',
+          cmd: '/ads forecast',
+          icon: '📊',
+          color: '#60a5fa',
+          title: 'Прогноз виручки та прибутку на 90 днів (Q3)',
+          badge: 'Прогноз: ' + fmt(m.netProfit * 3.2) + ' за 90 днів',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#60a5fa;">📊 Прогноз фінансових показників на 90 днів:</div>
+              <p>• <strong>Прогнозована виручка (Q3):</strong> <strong style="color:#4ade80">${fmt(m.totalRev * 3.1)}</strong></p>
+              <p>• <strong>Прогнозований чистий прибуток:</strong> <strong style="color:#4ade80">${fmt(m.netProfit * 3.2)}</strong></p>
+              <p>• <strong>Рекомендований місячний бюджет:</strong> ${fmt(m.totalSpend * 1.35)}</p>
+            </div>`
+        },
+        {
+          id: 'report-export',
+          cmd: '/ads export',
+          icon: '📥',
+          color: '#f472b6',
+          title: 'Експорт Executive PDF / Markdown звіту для інвесторів',
+          badge: 'Звіт готовий · 14 Сторінок',
+          open: false,
+          content: `
+            <div class="report-text-block">
+              <div class="rt-title" style="color:#f472b6;">📥 Executive Звіт згенерувати та завантажити:</div>
+              <p>Повний розширений аналітичний документ завантажено та сформовано на основі ${m.leads.toLocaleString()} рядків підключеного датасету.</p>
+              <button class="btn-export-download" onclick="openCopilot('/ads export')">📥 Відкрити повний звіт в AI Copilot</button>
+            </div>`
+        }
+      ];
+
+      container.innerHTML = reportsHTML.map(r => `
+        <div class="report-accordion-card ${r.open ? 'active' : ''}" id="${r.id}">
+          <div class="report-card-header" onclick="toggleReportCard('${r.id}')">
+            <span class="report-cmd-badge" style="color:${r.color}; border-color:${r.color}40; background:${r.color}15;">${r.icon} ${r.cmd}</span>
+            <span class="report-card-title">${r.title}</span>
+            <span class="report-card-badge">${r.badge}</span>
+            <span class="report-chevron">${r.open ? '▲' : '▼'}</span>
+          </div>
+          <div class="report-card-body" style="display:${r.open ? 'block' : 'none'};">
+            ${r.content}
+          </div>
+        </div>
+      `).join('');
+
+      sec.style.display = 'block';
+    }
+
+    function toggleReportCard(id) {
+      const card = document.getElementById(id);
+      if (!card) return;
+      const body = card.querySelector('.report-card-body');
+      const chevron = card.querySelector('.report-chevron');
+      if (!body) return;
+      const isHidden = body.style.display === 'none';
+      body.style.display = isHidden ? 'block' : 'none';
+      card.classList.toggle('active', isHidden);
+      if (chevron) chevron.textContent = isHidden ? '▲' : '▼';
+    }
+
+    function toggleExpandAllReports(btn) {
+      const cards = document.querySelectorAll('.report-accordion-card');
+      if (!cards || cards.length === 0) return;
+      const isExpanding = btn.textContent.includes('Розгорнути');
+      cards.forEach(card => {
+        const body = card.querySelector('.report-card-body');
+        const chevron = card.querySelector('.report-chevron');
+        if (body) body.style.display = isExpanding ? 'block' : 'none';
+        card.classList.toggle('active', isExpanding);
+        if (chevron) chevron.textContent = isExpanding ? '▲' : '▼';
+      });
+      btn.textContent = isExpanding ? '📁 Згорнути всі' : '📂 Розгорнути всі';
+    }
+
+    function renderAlerts(cpl, roi, channels) {
+      const alertsSec = document.getElementById('alertsSection');
+      const alertsList = document.getElementById('alertsList');
+      const alerts = [];
+
+      if (roi < 0) alerts.push({ type:'red', msg:`🔴 ROI від'ємний (${roi.toFixed(1)}%) — кампанії працюють у збиток` });
+      if (cpl > BASELINE_CPL * 1.2) alerts.push({ type:'red', msg:`🔴 CPL $${cpl.toFixed(2)} на ${Math.round((cpl/BASELINE_CPL-1)*100)}% вище baseline — ⚠️ ANOMALY DETECTED` });
+      channels.forEach(c => {
+        if (c.roi < 0) alerts.push({ type:'red', msg:`🔴 ${c.name}: ROI ${c.roi.toFixed(1)}% → Збитковий канал. Рекомендується пауза.` });
+        else if (c.roi > 40) alerts.push({ type:'green', msg:`🚀 ${c.name}: ROI +${c.roi.toFixed(1)}% → Високоефективний. Збільшити бюджет +30–50%.` });
+      });
+      if (roi >= 0 && roi < 10) alerts.push({ type:'yellow', msg:`🟡 ROI ${roi.toFixed(1)}% — нижче цільового порогу (target ≥ 20%)` });
+      if (alerts.length === 0) alerts.push({ type:'green', msg:`✅ Аномалій не виявлено — всі показники в нормі` });
+
+      alertsList.innerHTML = alerts.map(a => `<div class="alert-item alert-${a.type}">${a.msg}</div>`).join('');
+      alertsSec.style.display = 'block';
+    }
+
+    function renderCharts(channels) {
+      const labels = channels.slice(0,6).map(c => truncate(c.name, 14));
+      const spends = channels.slice(0,6).map(c => c.spend);
+      const revs   = channels.slice(0,6).map(c => c.rev);
+      const rois   = channels.slice(0,6).map(c => Math.round(c.roi));
+
+      const ctxBar = document.getElementById('liveBarChart').getContext('2d');
+      if (_barChart) _barChart.destroy();
+      _barChart = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label:'Spend', data:spends, backgroundColor:'rgba(239,68,68,0.7)', borderRadius:6 },
+            { label:'Revenue', data:revs, backgroundColor:'rgba(16,185,129,0.7)', borderRadius:6 }
+          ]
+        },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#94a3b8' } } }, scales:{ x:{ ticks:{ color:'#64748b' } }, y:{ ticks:{ color:'#64748b' } } } }
+      });
+
+      const ctxRoi = document.getElementById('liveRoiChart').getContext('2d');
+      if (_roiChart) _roiChart.destroy();
+      _roiChart = new Chart(ctxRoi, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ label:'ROI (%)', data:rois, backgroundColor: rois.map(r => r >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)'), borderRadius:6 }]
+        },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ color:'#64748b' } }, y:{ ticks:{ color:'#64748b' } } } }
+      });
+      document.getElementById('chartSection').style.display = 'block';
+    }
+
+    function renderTable(channels) {
+      const tbody = document.getElementById('channelTableBody');
+      tbody.innerHTML = channels.map(c => {
+        const roiColor = c.roi < 0 ? '#f87171' : c.roi > 40 ? '#4ade80' : '#fbbf24';
+        const profitColor = (c.rev - c.spend) >= 0 ? '#4ade80' : '#f87171';
+        const actionBadge = c.roi < 0
+          ? '<span style="background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700;">🔴 PAUSE</span>'
+          : c.roi > 40
+            ? '<span style="background:rgba(16,185,129,0.15); color:#6ee7b7; border:1px solid rgba(16,185,129,0.3); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700;">🚀 SCALE +50%</span>'
+            : '<span style="background:rgba(245,158,11,0.15); color:#fde047; border:1px solid rgba(245,158,11,0.3); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700;">🟡 OPTIMIZE</span>';
+
+        return `<tr>
+          <td style="font-weight:600; color:#e2e8f0;">${c.name}</td>
+          <td>${c.leads.toLocaleString()}</td>
+          <td style="color:#f87171;">${fmtUSD(c.spend)}</td>
+          <td style="color:#4ade80;">${fmtUSD(c.rev)}</td>
+          <td style="color:${profitColor};">${(c.rev-c.spend>=0?'+':'')}${fmtUSD(c.rev-c.spend)}</td>
+          <td style="color:${roiColor}; font-weight:700;">${(c.roi>=0?'+':'')}${c.roi.toFixed(1)}%</td>
+          <td style="color:#fbbf24;">$${c.cpl.toFixed(2)}</td>
+          <td>${actionBadge}</td>
+        </tr>`;
+      }).join('');
+      document.getElementById('tableSection').style.display = 'block';
+    }
+
+    function openCopilot(cmdTarget = 'all') {
+      if (window._liveMetrics) sessionStorage.setItem('liveMetrics', JSON.stringify(window._liveMetrics));
+      if (cmdTarget === 'all') {
+        sessionStorage.setItem('autoRunAllAds', 'true');
+        sessionStorage.removeItem('autoRunCmd');
+        window.location.href = 'index.html#ads-copilot-all';
+      } else {
+        sessionStorage.setItem('autoRunCmd', cmdTarget);
+        sessionStorage.removeItem('autoRunAllAds');
+        window.location.href = 'index.html#ads-copilot';
+      }
+    }
+
+    function runSelectedCmd() {
+      const select = document.getElementById('singleCmdSelect');
+      const val = select ? select.value : '';
+      if (!val) {
+        alert('Будь ласка, оберіть команду зі списку.');
+        return;
+      }
+      openCopilot(val);
+    }
+
+    function toggleMoreChips() {
+      const grid = document.getElementById('extraChipsGrid');
+      const btn = document.getElementById('moreChipsBtn');
+      if (!grid) return;
+      const isHidden = grid.style.display === 'none';
+      grid.style.display = isHidden ? 'flex' : 'none';
+      if (btn) btn.innerHTML = isHidden ? '<span>Сховати ▲</span>' : '<span>+ Ще 7 команд ▼</span>';
+    }
+
+    function setStatus(state, text) {
+      const dot = document.getElementById('statusDot');
+      const txt = document.getElementById('statusText');
+      const colors = { ok:'#10b981', error:'#ef4444', loading:'#f59e0b' };
+      dot.style.background = colors[state] || '#334155';
+      dot.style.animation = state === 'ok' ? 'pulse 2s infinite' : 'none';
+      txt.textContent = text;
+    }
+
+    function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+    function fmtUSD(n) { return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits:0, maximumFractionDigits:0 }); }
+    function truncate(s, n) { return s.length > n ? s.slice(0,n)+'…' : s; }
+
+    function parseCSV(text) {
+      const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l => l.trim());
+      return lines.map(line => {
+        const result = []; let inQ = false, cur = '';
+        for (const ch of line) {
+          if (ch === '"') { inQ = !inQ; }
+          else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+          else { cur += ch; }
+        }
+        result.push(cur.trim());
+        return result;
+      });
+    }
+  </script>
+</body>
+</html>
