@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "build": "npx prisma generate && npx prisma migrate deploy && node prisma/seed.js",
+    "build": "prisma generate",
+    "vercel-build": "prisma generate",
     "postinstall": "prisma generate"
   },
   "keywords": [],
