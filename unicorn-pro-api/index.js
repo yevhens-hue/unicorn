@@ -7,6 +7,14 @@ const prisma = new PrismaClient();
 app.use(cors());
 app.use(express.json());
 
+// Normalize Vercel serverless URLs (e.g. /agent/digest -> /api/agent/digest)
+app.use((req, res, next) => {
+  if (!req.url.startsWith('/api')) {
+    req.url = '/api' + (req.url.startsWith('/') ? '' : '/') + req.url;
+  }
+  next();
+});
+
 const LeadController = require('./src/controllers/LeadController');
 const BillingController = require('./src/controllers/BillingController');
 const TelegramAlertService = require('./src/services/TelegramAlertService');
