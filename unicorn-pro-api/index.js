@@ -10,11 +10,58 @@ app.use(express.json());
 const LeadController = require('./src/controllers/LeadController');
 const BillingController = require('./src/controllers/BillingController');
 const TelegramAlertService = require('./src/services/TelegramAlertService');
+const AIAgentService = require('./src/services/AIAgentService');
 
 // ---------------------------------------------------------
 // PING-POST ENGINE
 // ---------------------------------------------------------
 app.post('/api/leads', LeadController.submitLead);
+
+// ---------------------------------------------------------
+// AI COS AGENT (Chief of Staff) API
+// ---------------------------------------------------------
+app.post('/api/agent/qualify', async (req, res) => {
+  try {
+    const qualification = await AIAgentService.qualifyLead(req.body);
+    res.json(qualification);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/agent/digest', async (req, res) => {
+  try {
+    const digestData = await AIAgentService.generateDailyDigest();
+    res.json(digestData);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/agent/telegram-webhook', async (req, res) => {
+  try {
+    const result = await AIAgentService.handleTelegramWebhook(req.body);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/leads/:id/approve-ppa', async (req, res) => {
+  try {
+    const leadId = parseInt(req.params.id);
+    const updatedLead = await prisma.lead.update({
+      where: { id: leadId },
+      data: {
+        leadType: 'PPA_CALLCENTER',
+        appointmentStatus: 'Confirmed'
+      }
+    });
+    res.json({ success: true, lead: updatedLead });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // ---------------------------------------------------------
 // AUTH (MVP: simple token check)

@@ -4,6 +4,7 @@ const LeadRepository = require('../repositories/LeadRepository');
 const TwilioService = require('../services/TwilioService');
 const TrustedFormService = require('../services/TrustedFormService');
 const BigQueryStreamService = require('../services/BigQueryStreamService');
+const AIAgentService = require('../services/AIAgentService');
 
 class LeadController {
   static async submitLead(req, res) {
@@ -25,12 +26,17 @@ class LeadController {
         return res.status(400).json({ error: "TCPA consent is required and must be validated via TrustedForm" });
       }
 
+      // 0b. AI Agent Chief of Staff Qualification
+      const aiQualification = await AIAgentService.qualifyLead({
+        name, serviceType, zipCode, projectScope, urgency, timeframe, isOwner
+      });
+
       // 1. Fetch matching campaigns via Repository
       const activeCampaigns = await CampaignRepository.getActiveMatchingCampaigns(serviceType, zipCode);
 
       // 2. Delegate to PingPostService for Second-Price Auction & Waterfall Queue
       const leadData = { 
-        vertical, 
+        vertical: aiQualification.category || vertical, 
         serviceType, 
         zipCode, 
         propertyType, 
@@ -60,7 +66,11 @@ class LeadController {
       let newLead;
       if (auctionResult.status === 'Unsold') {
         newLead = await LeadRepository.saveUnsoldLead(leadData);
-        return res.status(201).json({ success: true, auctionResult, leadId: newLead.id });
+        // Trigger AI Agent Telegram Approval / Rescue Card if high value or unsold
+        if (aiQualification.needsApproval || aiQualification.estimatedBudget >= 10000) {
+          await AIAgentService.sendTelegramApprovalCard(newLead, aiQualification);
+        }
+        return res.status(201).json({ success: true, auctionResult, leadId: newLead.id, aiQualification });
       }
 
       newLead = await LeadRepository.saveSoldLeadWithTransactions(
@@ -68,6 +78,11 @@ class LeadController {
         auctionResult.winners, 
         auctionResult.status
       );
+
+      // Trigger Telegram Approval Card if high value
+      if (aiQualification.needsApproval) {
+        await AIAgentService.sendTelegramApprovalCard(newLead, aiQualification);
+      }
 
       const safeWinners = auctionResult.winners.map(campaign => ({
         companyName: campaign.buyer.name,

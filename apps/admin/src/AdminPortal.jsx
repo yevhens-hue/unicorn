@@ -19,6 +19,21 @@ export default function AdminPortal() {
   const [leadsFilter, setLeadsFilter] = useState({ status: '', vertical: '' });
   const [balanceInputs, setBalanceInputs] = useState({});
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [aiDigest, setAiDigest] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const fetchAiDigest = async () => {
+    setAiLoading(true);
+    try {
+      const res = await fetch(`${API}/api/agent/digest`);
+      const data = await res.json();
+      setAiDigest(data);
+    } catch (e) {
+      console.error("fetchAiDigest error:", e);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const fetchKpi = async () => {
     try {
@@ -276,6 +291,32 @@ export default function AdminPortal() {
                       <div className="akpi-label">{k.label}</div>
                     </div>
                   ))}
+                </div>
+
+                {/* 🤖 AI CHIEF OF STAFF BRIEFING WIDGET */}
+                <div className="admin-tip glass-card mt-3" style={{ background: 'rgba(124, 58, 237, 0.12)', borderColor: 'rgba(167, 139, 250, 0.3)', color: '#e9d5ff', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem', color: '#c084fc', fontWeight: '700' }}>
+                      🤖 AI Chief of Staff (COS) — Executive Briefing
+                    </div>
+                    <button 
+                      onClick={fetchAiDigest} 
+                      disabled={aiLoading}
+                      style={{ background: 'linear-gradient(135deg, #7c3aed, #4338ca)', color: '#fff', border: 'none', borderRadius: '10px', padding: '8px 16px', fontWeight: '600', cursor: 'pointer' }}
+                    >
+                      {aiLoading ? '✨ Analyzing...' : '✨ Generate AI Digest'}
+                    </button>
+                  </div>
+
+                  {aiDigest ? (
+                    <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '16px', borderRadius: '12px', whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.88rem', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      {aiDigest.digest}
+                    </div>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: '0.88rem', color: '#cbd5e1' }}>
+                      Click <strong>Generate AI Digest</strong> to run Claude 3.5 Sonnet qualification analytics, examine pending approval leads, and generate a 20:30 chief of staff briefing.
+                    </p>
+                  )}
                 </div>
 
                 <div className="admin-tip glass-card mt-3" style={{ background: 'rgba(37, 99, 235, 0.1)', borderColor: 'rgba(37, 99, 235, 0.3)', color: '#93c5fd', borderRadius: '16px', padding: '20px' }}>
