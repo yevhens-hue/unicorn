@@ -8,7 +8,9 @@ app.use(express.json());
 
 // Normalize Vercel serverless URLs (e.g. /agent/digest -> /api/agent/digest)
 app.use((req, res, next) => {
-  if (!req.url.startsWith('/api')) {
+  if (req.url.startsWith('/api/api/')) {
+    req.url = req.url.replace('/api/api/', '/api/');
+  } else if (!req.url.startsWith('/api')) {
     req.url = '/api' + (req.url.startsWith('/') ? '' : '/') + req.url;
   }
   next();
@@ -41,6 +43,7 @@ const handleVoiceCall = async (req, res) => {
 };
 app.post('/api/agent/voice-call/:leadId', handleVoiceCall);
 app.post('/agent/voice-call/:leadId', handleVoiceCall);
+app.post('/api/api/agent/voice-call/:leadId', handleVoiceCall);
 
 const handleVoiceWebhook = async (req, res) => {
   try {
@@ -52,6 +55,7 @@ const handleVoiceWebhook = async (req, res) => {
 };
 app.post('/api/agent/voice-webhook', handleVoiceWebhook);
 app.post('/agent/voice-webhook', handleVoiceWebhook);
+app.post('/api/api/agent/voice-webhook', handleVoiceWebhook);
 
 // ---------------------------------------------------------
 // AI COS AGENT (Chief of Staff) API
