@@ -20,34 +20,40 @@ app.post('/api/leads', LeadController.submitLead);
 // ---------------------------------------------------------
 // AI COS AGENT (Chief of Staff) API
 // ---------------------------------------------------------
-app.post(['/api/agent/qualify', '/agent/qualify'], async (req, res) => {
+const handleQualify = async (req, res) => {
   try {
     const qualification = await AIAgentService.qualifyLead(req.body);
     res.json(qualification);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-});
+};
+app.post('/api/agent/qualify', handleQualify);
+app.post('/agent/qualify', handleQualify);
 
-app.get(['/api/agent/digest', '/agent/digest'], async (req, res) => {
+const handleDigest = async (req, res) => {
   try {
     const digestData = await AIAgentService.generateDailyDigest();
     res.json(digestData);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-});
+};
+app.get('/api/agent/digest', handleDigest);
+app.get('/agent/digest', handleDigest);
 
-app.post(['/api/agent/telegram-webhook', '/agent/telegram-webhook'], async (req, res) => {
+const handleTelegramWebhook = async (req, res) => {
   try {
     const result = await AIAgentService.handleTelegramWebhook(req.body);
     res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-});
+};
+app.post('/api/agent/telegram-webhook', handleTelegramWebhook);
+app.post('/agent/telegram-webhook', handleTelegramWebhook);
 
-app.post(['/api/leads/:id/approve-ppa', '/leads/:id/approve-ppa'], async (req, res) => {
+const handleApprovePpa = async (req, res) => {
   try {
     const leadId = parseInt(req.params.id);
     const updatedLead = await prisma.lead.update({
@@ -61,7 +67,9 @@ app.post(['/api/leads/:id/approve-ppa', '/leads/:id/approve-ppa'], async (req, r
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-});
+};
+app.post('/api/leads/:id/approve-ppa', handleApprovePpa);
+app.post('/leads/:id/approve-ppa', handleApprovePpa);
 
 // ---------------------------------------------------------
 // AUTH (MVP: simple token check)
