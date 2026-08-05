@@ -196,6 +196,14 @@ Click below to approve for $150 Pay-Per-Appointment auction:`;
     console.log(`Inline Buttons:`, JSON.stringify(inlineKeyboard));
     console.log(`===========================================================\n`);
 
+    if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+      try {
+        await TelegramAlertService.sendMessage(process.env.TELEGRAM_CHAT_ID, message, inlineKeyboard);
+      } catch (err) {
+        console.warn('[AIAgentService] Telegram approval card dispatch warning:', err.message);
+      }
+    }
+
     return { message, inlineKeyboard };
   }
 
