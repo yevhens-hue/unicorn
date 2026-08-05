@@ -1,5 +1,6 @@
 const prisma = require('../lib/prisma');
 const TelegramAlertService = require('./TelegramAlertService');
+const ContractorScheduleService = require('./ContractorScheduleService');
 
 class AIAgentService {
   /**
@@ -234,18 +235,7 @@ Click below to approve for $150 Pay-Per-Appointment auction:`;
       } else if (data.startsWith('edit_lead:')) {
         const leadId = parseInt(data.split(':')[1]);
         
-        const inlineKeyboard = {
-          inline_keyboard: [
-            [
-              { text: '🗓 Tomorrow 9 AM', callback_data: `reschedule_slot:${leadId}:Tomorrow 9 AM` },
-              { text: '🗓 Tomorrow 2 PM', callback_data: `reschedule_slot:${leadId}:Tomorrow 2 PM` }
-            ],
-            [
-              { text: '🗓 Saturday 10 AM', callback_data: `reschedule_slot:${leadId}:Saturday 10 AM` },
-              { text: '✓ Confirm Current Slot', callback_data: `approve_ppa:${leadId}` }
-            ]
-          ]
-        };
+        const inlineKeyboard = ContractorScheduleService.getInteractiveSlotButtons(leadId);
 
         const resMessage = `✏️ *RESCHEDULE OPTIONS FOR LEAD #${leadId}*\n\nPlease select an available appointment slot below for contractor dispatch:`;
 
