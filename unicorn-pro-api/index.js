@@ -20,7 +20,7 @@ app.post('/api/leads', LeadController.submitLead);
 // ---------------------------------------------------------
 // AI COS AGENT (Chief of Staff) API
 // ---------------------------------------------------------
-app.post('/api/agent/qualify', async (req, res) => {
+app.post(['/api/agent/qualify', '/agent/qualify'], async (req, res) => {
   try {
     const qualification = await AIAgentService.qualifyLead(req.body);
     res.json(qualification);
@@ -29,7 +29,7 @@ app.post('/api/agent/qualify', async (req, res) => {
   }
 });
 
-app.get('/api/agent/digest', async (req, res) => {
+app.get(['/api/agent/digest', '/agent/digest'], async (req, res) => {
   try {
     const digestData = await AIAgentService.generateDailyDigest();
     res.json(digestData);
@@ -38,7 +38,7 @@ app.get('/api/agent/digest', async (req, res) => {
   }
 });
 
-app.post('/api/agent/telegram-webhook', async (req, res) => {
+app.post(['/api/agent/telegram-webhook', '/agent/telegram-webhook'], async (req, res) => {
   try {
     const result = await AIAgentService.handleTelegramWebhook(req.body);
     res.json(result);
@@ -47,7 +47,7 @@ app.post('/api/agent/telegram-webhook', async (req, res) => {
   }
 });
 
-app.post('/api/leads/:id/approve-ppa', async (req, res) => {
+app.post(['/api/leads/:id/approve-ppa', '/leads/:id/approve-ppa'], async (req, res) => {
   try {
     const leadId = parseInt(req.params.id);
     const updatedLead = await prisma.lead.update({
