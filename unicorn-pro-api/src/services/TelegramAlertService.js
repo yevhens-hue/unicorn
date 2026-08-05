@@ -1,41 +1,32 @@
 const prisma = require('../lib/prisma');
+const https = require('https');
 
 class TelegramAlertService {
   /**
-   * Calculates the Fill Rate (sold / total * 100) and sends a Telegram alert
-   * if the rate drops below 70%. (Mocked API call)
+   * Checks the platform Fill Rate. If below 70%, logs an alert message.
    */
   static async checkFillRateAndAlert() {
     try {
-      console.log(`[TelegramAlertService] Checking Fill Rate...`);
-      
-      // Calculate total leads and unsold leads
-      const [totalLeads, unsoldLeads] = await Promise.all([
-        prisma.lead.count(),
-        prisma.lead.count({ where: { status: 'Unsold' } })
-      ]);
+      const totalLeads = await prisma.lead.count();
+      if (totalLeads === 0) return;
 
-      if (totalLeads === 0) {
-        console.log(`[TelegramAlertService] No leads found. Skipping alert.`);
-        return;
-      }
+      const unsoldLeads = await prisma.lead.count({
+        where: { status: 'Unsold' }
+      });
 
       const soldLeads = totalLeads - unsoldLeads;
       const fillRate = (soldLeads / totalLeads) * 100;
-      
-      console.log(`[TelegramAlertService] Current Fill Rate: ${fillRate.toFixed(2)}% (${soldLeads}/${totalLeads})`);
 
       if (fillRate < 70) {
-        // Send alert
         const message = `🚨 *URGENT:* Platform Fill Rate dropped below 70%!\n\n`
           + `*Current Rate:* ${fillRate.toFixed(2)}%\n`
           + `*Unsold Leads:* ${unsoldLeads}\n`
           + `*Total Leads:* ${totalLeads}\n\n`
           + `_Action Required:_ Check buyer coverage and floor prices.`;
           
-        await this.sendMessage(message);
+        await this.sendMessage(process.env.TELEGRAM_CHAT_ID || '264172207', message);
       } else {
-        console.log(`[TelegramAlertService] Fill rate is healthy. No alert needed.`);
+        console.log(`[TelegramAlertService] Fill rate is healthy. (${fillRate.toFixed(1)}%)`);
       }
 
     } catch (e) {
@@ -44,14 +35,63 @@ class TelegramAlertService {
   }
 
   /**
-   * Mocks sending a message to Telegram via Bot API.
-   * @param {string} message 
+   * Sends a live HTTP POST message to Telegram Bot API.
+   * Supports target chatId, markdown text, and inline keyboard buttons.
    */
-  static async sendMessage(message) {
-    // In real life: axios.post(`https://api.telegram.org/bot${token}/sendMessage`, { chat_id, text: message })
-    console.log(`\n================= TELEGRAM ALERT =================`);
-    console.log(message);
-    console.log(`==================================================\n`);
+  static async sendMessage(chatId, textMessage, inlineKeyboard = null) {
+    let targetChatId = chatId;
+    let messageText = textMessage;
+
+    // Handle single-argument calls
+    if (!textMessage && chatId) {
+      messageText = chatId;
+      targetChatId = process.env.TELEGRAM_CHAT_ID || '264172207';
+    }
+
+    const botToken = process.env.TELEGRAM_BOT_TOKEN || '8831027970:AAH2CIPE_9HQwyjG3Mpbkqh79C4PVk041JQ';
+    const finalChatId = targetChatId || process.env.TELEGRAM_CHAT_ID || '264172207';
+
+    console.log(`\n================= DISPATCHING TELEGRAM ALERT =================`);
+    console.log(`To Chat ID: ${finalChatId}`);
+    console.log(messageText);
+    console.log(`============================================================\n`);
+
+    const payloadObj = {
+      chat_id: finalChatId,
+      text: messageText,
+      parse_mode: 'Markdown'
+    };
+    if (inlineKeyboard) {
+      payloadObj.reply_markup = inlineKeyboard;
+    }
+    const payload = JSON.stringify(payloadObj);
+
+    return new Promise((resolve) => {
+      const req = https.request({
+        hostname: 'api.telegram.org',
+        path: `/bot${botToken}/sendMessage`,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload)
+        }
+      }, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          console.log('[TelegramAlertService] Telegram API Response:', body);
+          resolve(body);
+        });
+      });
+
+      req.on('error', (err) => {
+        console.error('[TelegramAlertService] HTTP Request Error:', err.message);
+        resolve(null);
+      });
+
+      req.write(payload);
+      req.end();
+    });
   }
 }
 
