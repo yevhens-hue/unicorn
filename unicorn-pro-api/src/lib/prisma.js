@@ -1,6 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 
-const connectionString = process.env.DATABASE_URL || "postgresql://postgres.pnerikwvvtehclswgstb:y%40Je7%40EuPWd%2Bs%408@aws-0-ca-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
+let connectionString = process.env.DATABASE_URL || "postgresql://postgres.pnerikwvvtehclswgstb:y%40Je7%40EuPWd%2Bs%408@aws-0-ca-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
+
+// Automatically sanitize stale or unencoded connection strings on Vercel serverless
+if (connectionString.includes('roxdzvzlvvmmeufeyqkb') || connectionString.includes('y@Je7')) {
+  connectionString = "postgresql://postgres.pnerikwvvtehclswgstb:y%40Je7%40EuPWd%2Bs%408@aws-0-ca-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
+}
 
 const prisma = new PrismaClient({
   datasources: {
