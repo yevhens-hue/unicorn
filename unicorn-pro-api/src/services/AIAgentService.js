@@ -70,7 +70,7 @@ Return JSON with:
 }`;
 
         const response = await anthropic.messages.create({
-          model: 'claude-3-5-sonnet-latest',
+          model: 'claude-3-7-sonnet-20250219',
           max_tokens: 500,
           messages: [{ role: 'user', content: prompt }]
         });
