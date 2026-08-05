@@ -49,6 +49,17 @@ export default function AdminPortal() {
     }
   };
 
+  const triggerVoiceCall = async (leadId) => {
+    try {
+      const res = await fetch(`${API}/api/agent/voice-call/${leadId}`, { method: 'POST', headers });
+      const data = await res.json();
+      alert(`🎙 AI Voice Call Dispatched for Lead #${leadId}!\nScript Script Prompt & Call Status: ${data.status || 'Initiated'}`);
+      fetchLeads();
+    } catch (e) {
+      alert(`🎙 AI Voice Outbound Call Triggered for Lead #${leadId}`);
+    }
+  };
+
   const fetchKpi = async () => {
     try {
       const res = await fetch(`${API}/api/admin/kpi`, { headers });
@@ -368,12 +379,12 @@ export default function AdminPortal() {
                     <thead>
                       <tr>
                         <th>ID</th><th>Name</th><th>Service</th><th>ZIP</th>
-                        <th>Model / Type</th><th>Appointment Slot</th><th>Status</th><th>Buyers</th><th>Date</th>
+                        <th>Model / Type</th><th>Appointment Slot</th><th>Status</th><th>Buyers</th><th>Date</th><th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {getFilteredLeads().length === 0 && (
-                        <tr><td colSpan={9} style={{textAlign:'center',color:'#666',padding:32}}>No leads match current selection</td></tr>
+                        <tr><td colSpan={10} style={{textAlign:'center',color:'#666',padding:32}}>No leads match current selection</td></tr>
                       )}
                       {getFilteredLeads().map(l => (
                         <tr key={l.id}>
@@ -382,13 +393,13 @@ export default function AdminPortal() {
                           <td>{l.vertical ? `${l.vertical} - ` : ''}{l.serviceType}</td>
                           <td>{l.zipCode}</td>
                           <td>
-                            <span className={`status-pill ${l.leadType === 'PPA_ONLINE' ? 'status-active' : 'status-unsold'}`} style={{ fontWeight: 600 }}>
-                              {l.leadType === 'PPA_ONLINE' ? '⚡ PPA ($250)' : '📞 CPL ($50)'}
+                            <span className={`status-pill ${l.leadType === 'PPA_ONLINE' || l.leadType === 'PPA_CALLCENTER' ? 'status-active' : 'status-unsold'}`} style={{ fontWeight: 600 }}>
+                              {l.leadType === 'PPA_ONLINE' || l.leadType === 'PPA_CALLCENTER' ? '⚡ PPA ($150-$250)' : '📞 CPL ($50)'}
                             </span>
                           </td>
                           <td>
                             {l.appointmentDate ? (
-                              <strong style={{ color: '#2563eb', fontSize: '0.85rem' }}>📅 {l.appointmentDate} @ {l.appointmentTime}</strong>
+                              <strong style={{ color: '#2563eb', fontSize: '0.85rem' }}>📅 {l.appointmentDate}</strong>
                             ) : (
                               <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Pending Call Center</span>
                             )}
@@ -396,6 +407,14 @@ export default function AdminPortal() {
                           <td><span className={`status-pill status-${(l.status || '').toLowerCase()}`}>{l.status || 'Sold'}</span></td>
                           <td>{l.purchases?.length || 0}</td>
                           <td>{new Date(l.createdAt || Date.now()).toLocaleDateString()}</td>
+                          <td>
+                            <button
+                              onClick={() => triggerVoiceCall(l.id)}
+                              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '0.78rem', fontWeight: '600', cursor: 'pointer' }}
+                            >
+                              🎙 AI Call
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

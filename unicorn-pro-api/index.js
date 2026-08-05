@@ -18,11 +18,40 @@ const LeadController = require('./src/controllers/LeadController');
 const BillingController = require('./src/controllers/BillingController');
 const TelegramAlertService = require('./src/services/TelegramAlertService');
 const AIAgentService = require('./src/services/AIAgentService');
+const AIVoiceCallService = require('./src/services/AIVoiceCallService');
 
 // ---------------------------------------------------------
 // PING-POST ENGINE
 // ---------------------------------------------------------
 app.post('/api/leads', LeadController.submitLead);
+
+// ---------------------------------------------------------
+// AI COS AGENT (Chief of Staff) & VOICE OUTBOUND BOOKER API
+// ---------------------------------------------------------
+const handleVoiceCall = async (req, res) => {
+  try {
+    const leadId = parseInt(req.params.leadId);
+    const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    const callResult = await AIVoiceCallService.initiateOutboundCall(lead);
+    res.json(callResult);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
+app.post('/api/agent/voice-call/:leadId', handleVoiceCall);
+app.post('/agent/voice-call/:leadId', handleVoiceCall);
+
+const handleVoiceWebhook = async (req, res) => {
+  try {
+    const result = await AIVoiceCallService.handleCallWebhook(req.body);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
+app.post('/api/agent/voice-webhook', handleVoiceWebhook);
+app.post('/agent/voice-webhook', handleVoiceWebhook);
 
 // ---------------------------------------------------------
 // AI COS AGENT (Chief of Staff) API
