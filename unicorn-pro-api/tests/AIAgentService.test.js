@@ -74,4 +74,32 @@ describe('AIAgentService (Chief of Staff AI Engine)', () => {
     expect(response.success).toBe(true);
     expect(response.message).toContain('Lead #11 approved');
   });
+
+  it('should handle Telegram webhook callbacks for edit_lead (requesting reschedule options)', async () => {
+    const update = {
+      callback_query: {
+        data: 'edit_lead:11'
+      }
+    };
+
+    const response = await AIAgentService.handleTelegramWebhook(update);
+
+    expect(response.success).toBe(true);
+    expect(response.message).toContain('Reschedule options sent');
+    expect(response.inlineKeyboard.inline_keyboard.length).toBeGreaterThan(0);
+  });
+
+  it('should handle Telegram webhook callbacks for reschedule_slot', async () => {
+    const update = {
+      callback_query: {
+        data: 'reschedule_slot:11:Tomorrow 10 AM'
+      }
+    };
+
+    const response = await AIAgentService.handleTelegramWebhook(update);
+
+    expect(response.success).toBe(true);
+    expect(response.message).toContain('rescheduled to Tomorrow 10 AM');
+    expect(response.lead.appointmentStatus).toBe('Confirmed');
+  });
 });

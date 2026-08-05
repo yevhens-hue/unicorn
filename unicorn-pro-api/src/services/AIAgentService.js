@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const TelegramAlertService = require('./TelegramAlertService');
 
 class AIAgentService {
   /**
@@ -204,6 +205,8 @@ Click below to approve for $150 Pay-Per-Appointment auction:`;
   static async handleTelegramWebhook(update) {
     if (update.callback_query) {
       const data = update.callback_query.data;
+      const chatId = update.callback_query.message?.chat?.id || process.env.TELEGRAM_CHAT_ID;
+
       if (data.startsWith('approve_ppa:')) {
         const leadId = parseInt(data.split(':')[1]);
         const updatedLead = await prisma.lead.update({
@@ -221,6 +224,66 @@ Click below to approve for $150 Pay-Per-Appointment auction:`;
           data: { status: 'Unsold', appointmentStatus: 'Cancelled' }
         });
         return { success: true, message: `❌ Lead #${leadId} rejected.`, lead: updatedLead };
+      } else if (data.startsWith('edit_lead:')) {
+        const leadId = parseInt(data.split(':')[1]);
+        
+        const inlineKeyboard = {
+          inline_keyboard: [
+            [
+              { text: '🗓 Tomorrow 9 AM', callback_data: `reschedule_slot:${leadId}:Tomorrow 9 AM` },
+              { text: '🗓 Tomorrow 2 PM', callback_data: `reschedule_slot:${leadId}:Tomorrow 2 PM` }
+            ],
+            [
+              { text: '🗓 Saturday 10 AM', callback_data: `reschedule_slot:${leadId}:Saturday 10 AM` },
+              { text: '✓ Confirm Current Slot', callback_data: `approve_ppa:${leadId}` }
+            ]
+          ]
+        };
+
+        const resMessage = `✏️ *RESCHEDULE OPTIONS FOR LEAD #${leadId}*\n\nPlease select an available appointment slot below for contractor dispatch:`;
+
+        if (process.env.TELEGRAM_BOT_TOKEN && chatId) {
+          try {
+            await TelegramAlertService.sendMessage(chatId, resMessage, inlineKeyboard);
+          } catch (err) {
+            console.warn('[AIAgentService] Telegram edit message error:', err.message);
+          }
+        }
+
+        return {
+          success: true,
+          message: `✏️ Reschedule options sent for Lead #${leadId}`,
+          inlineKeyboard
+        };
+      } else if (data.startsWith('reschedule_slot:')) {
+        const parts = data.split(':');
+        const leadId = parseInt(parts[1]);
+        const newSlot = parts[2] || 'Tomorrow 10 AM';
+
+        const updatedLead = await prisma.lead.update({
+          where: { id: leadId },
+          data: {
+            leadType: 'PPA_CALLCENTER',
+            appointmentDate: newSlot,
+            appointmentStatus: 'Confirmed'
+          }
+        });
+
+        const confirmMsg = `✅ *LEAD #${leadId} RESCHEDULED & CONFIRMED*\n\nNew Slot: *${newSlot}*\nStatus: *Confirmed for $150 PPA Auction*`;
+
+        if (process.env.TELEGRAM_BOT_TOKEN && chatId) {
+          try {
+            await TelegramAlertService.sendMessage(chatId, confirmMsg);
+          } catch (err) {
+            console.warn('[AIAgentService] Telegram reschedule confirm error:', err.message);
+          }
+        }
+
+        return {
+          success: true,
+          message: `✅ Lead #${leadId} rescheduled to ${newSlot} and confirmed!`,
+          lead: updatedLead
+        };
       }
     }
     return { success: true, message: 'Webhook processed' };
