@@ -12,6 +12,30 @@ class AIVoiceCallService {
    * 
    * @param {Object} lead 
    * @returns {string}
+  /**
+   * Returns AI voice response for common homeowner objections.
+   */
+  static getObjectionResponse(objectionType, lead = {}) {
+    const name = lead.name || 'Valued Customer';
+    const zip = lead.zipCode || '75001';
+    const service = lead.serviceType || 'Roofing';
+
+    const matrix = {
+      'IS_THIS_FREE': `Hi ${name}! Yes, 100% free with zero obligation. Our licensed contractor in ZIP ${zip} comes out, inspects your ${service}, and gives you an exact line-item written estimate. You don't pay a single cent for the consultation.`,
+      'ARE_YOU_A_MIDDLEMAN': `Great question, ${name}! Unicorn Pro is the direct regional scheduling hub for verified, licensed, and insured contractors in ${zip}. We don't resell your data to 10 companies — we match you with ONE top-rated local contractor who has guaranteed availability.`,
+      'JUST_SHOPPING_AROUND': `That makes total sense, ${name}! Shopping around is smart. We recommend locking in a 15-minute estimate slot now so your pricing is protected against material cost increases, even if you decide to do the project later.`,
+      'WHY_NEED_ADDRESS': `We use satellite roof-mapping technology to pre-measure your property before arriving, ${name}. Having your exact address allows our engineer to prepare 80% of the quote before even stepping foot on your property, saving you an hour of time!`
+    };
+
+    return matrix[objectionType] || `I completely understand, ${name}. Our goal is to make your ${service} estimate as fast and convenient as possible. Would tomorrow morning or afternoon work better for a 15-minute visit?`;
+  }
+
+  /**
+   * Generates a natural, personalized AI Voice conversation prompt script for a lead.
+   * Includes dynamic objection handling matrix.
+   * 
+   * @param {Object} lead 
+   * @returns {string}
    */
   static generateCallPrompt(lead) {
     const slots = ContractorScheduleService.generateAvailableSlots(lead.id || 1);
@@ -19,6 +43,11 @@ class AIVoiceCallService {
     const slot2Text = slots[1]?.slotText || 'Tomorrow afternoon at 2:00 PM';
 
     return `Hello ${lead.name || 'Valued Customer'}! This is the Unicorn AI Home Services Assistant calling to confirm your estimate appointment for ${lead.serviceType || 'Home Service'} in ZIP code ${lead.zipCode || 'your area'}. Our top-rated licensed contractor has open slots on ${slot1Text} or ${slot2Text}. Which of these times works best for you?
+
+OBJECTION HANDLING MATRIX:
+- IF HOMEOWNER ASKS "Is this free?": Respond "Yes, 100% free zero-obligation estimate."
+- IF HOMEOWNER ASKS "Are you a lead seller?": Respond "No, we are the direct regional booking platform for 1 verified contractor."
+- IF HOMEOWNER ASKS "Why need address?": Respond "We pre-measure via satellite imagery to save you 45 minutes during the visit."
 
 STRICT BOUNDARY INSTRUCTIONS:
 1. You are an Appointment Booking Assistant. Your ONLY goal is to confirm one of the two slots: ${slot1Text} or ${slot2Text}.

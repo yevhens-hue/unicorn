@@ -18,6 +18,7 @@ app.use((req, res, next) => {
 
 const LeadController = require('./src/controllers/LeadController');
 const BillingController = require('./src/controllers/BillingController');
+const AgentController = require('./src/controllers/AgentController');
 const TelegramAlertService = require('./src/services/TelegramAlertService');
 const AIAgentService = require('./src/services/AIAgentService');
 const AIVoiceCallService = require('./src/services/AIVoiceCallService');
@@ -26,6 +27,11 @@ const AIVoiceCallService = require('./src/services/AIVoiceCallService');
 // PING-POST ENGINE
 // ---------------------------------------------------------
 app.post('/api/leads', LeadController.submitLead);
+
+// AI COS Autonomous Agent & Voice Booker Endpoints
+app.post('/api/agent/cos/run-cycle', AgentController.runCosCycle);
+app.get('/api/agent/cos/status', AgentController.getCosStatus);
+app.post('/api/agent/voice/test-objection', AgentController.testObjection);
 
 // Public Telegram Activity Feed API for live website streaming
 const handleTelegramLiveFeed = (req, res) => {
