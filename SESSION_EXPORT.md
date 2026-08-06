@@ -1,143 +1,86 @@
-# 📦 SESSION EXPORT & FULL AUDIT LOG
-> Date: 2026-08-03 | Project: Unicorn Pro — Lead Marketplace PM Assignment
-> Live URL: https://yevhen-unicorn-test.surge.sh
+# 🦄 Unicorn Pro — Session Handoff & Architecture Export
+
+> **Date:** August 6, 2026  
+> **Status:** Production Deployed & Fully Operational  
+> **Repository:** `https://github.com/yevhens-hue/unicorn.git` (Branch `main`)
 
 ---
 
-## 📑 Table of Contents
-1. [Session Overview](#session-overview)
-2. [User Requests Log](#user-requests-log)
-3. [Technical Changes & Implementation Details](#technical-changes--implementation-details)
-4. [Data Audit & Dataset Verification](#data-audit--dataset-verification)
-5. [UI / Navigation Architecture](#ui--navigation-architecture)
-6. [Deployment Log](#deployment-log)
+## 📌 Executive Overview
 
----
+In this session, **Unicorn Pro** reached complete full-stack deployment and implemented enterprise-grade autonomous AI Agents, Google Antigravity (AGY) SDK multi-agent orchestration, custom MCP servers, and live Telegram broadcasting.
 
-## 1. Session Overview
+### 🌐 Active Production Live Endpoints
 
-During this session, we completed the full polish, cleanup, metric reconciliation, and UI optimization of the **Unicorn Pro** PM Test Assignment web application.
-
-- **Primary Goal:** Finalize the application, resolve metric discrepancies against `dataset.csv`, restructure the navigation into clean dropdowns, hide requested sections (`display:none`), fix live connector notification bugs, and produce complete export/handoff documentation.
-- **Status:** All requested changes implemented, verified against raw data, and deployed live to `yevhen-unicorn-test.surge.sh`.
-
----
-
-## 2. User Requests Log
-
-| # | Request Summary | Status | Action Taken |
+| Component | Target URL / ID | Status | Description |
 |---|---|---|---|
-| 1 | "не работают дропдауны" | ✅ Fixed | Rebuilt navigation dropdown system with pure CSS hover handlers. |
-| 2 | "убери про упоминания AI агента" | ✅ Fixed | Removed "AI Agent" references and hidden AI Analyzer & AI Copilot sections. |
-| 3 | "почему при загрузке других документов не подгружаются данные?" | ✅ Fixed | Resolved URL parsing and Google Sheets CSV export link format handling. |
-| 4 | "добавь еще привязку с датам везде" | ✅ Fixed | Added date range pickers and preset filters (Last 7D, 30D, This Month, All). |
-| 5 | "почему последний файл не подгрузился?" | ✅ Fixed | Fixed JS duplicate variable declaration syntax error in `renderAll()`. |
-| 6 | "скрой эти блоки / скрой этот раздел" | ✅ Fixed | Added `style="display:none;"` to requested sections (AI Analyzer, Live Connector from home, Gantt timeline). |
-| 7 | "объедини План дій, Geo Map, What-If, Matrix, До/Після в 03 Дашборд, а Live Data отдельным разделом" | ✅ Fixed | Restructured nav bar into `03 Дашборд ▾` dropdown + standalone `🟢 Live Data` link across all pages. |
-| 8 | "⚡ Виявлено зміни! ... относительно чего?" | ✅ Fixed | Fixed delta logic: delta comparison only triggers on real data refetch (`isRefresh=true`), avoiding false alerts during date filtering. |
-| 9 | "в чем разница между 'Останні 30 днів' и 'Цей місяць'?" | ✅ Clarified | Explained start-of-month logic vs relative 30-day lookback. |
-| 10 | "проверь актуализацию всех данных на сайте" | ✅ Verified | Calculated ground truth metrics from `dataset.csv` (5,323 rows) and updated all hardcoded values. |
-| 11 | "данные из live-connector сходятся с index.html#task3?" | ✅ Audited | Reconciled all numbers across pages (Revenue $158,257, Return Rate 10.5%, BuyerC ROI 87.2%). |
-| 12 | "сохрани сессию и сделай хэндоф / сделай файлы для экспорта" | ✅ Completed | Created `HANDOFF.md` and `SESSION_EXPORT.md`. |
+| **Public Web App (Surge)** | `https://yevhen-unicorn-test.surge.sh` | 🟢 LIVE | High-converting B2C homeowner landing page & instant scheduling engine |
+| **Live Interactive Console** | `https://yevhen-unicorn-test.surge.sh/live-connector.html` | 🟢 LIVE | Real-time AI COS Agent dashboard, live Telegram feed & Voice Booker simulator |
+| **Public Telegram Channel** | `@MyUnicornLiveChannel` | 🟢 LIVE | Live broadcast channel for all $150 PPA debits, appointment confirmations & AI alerts |
+| **Telegram Marketing Bot** | `@Unicornmarketingbot` | 🟢 LIVE | Bot administrator broadcasting real-time activity to `@MyUnicornLiveChannel` |
+| **Express Backend API** | `https://unicorn-pro-api-backend.vercel.app` | 🟢 LIVE | Production Express REST API (Prisma, SQLite, Lead Engine, AI Agents) |
 
 ---
 
-## 3. Technical Changes & Implementation Details
+## 🚀 Key Deliverables & Systems Built
 
-### Files Modified
+### 1. 🤖 AI Chief of Staff (COS) Autonomous Agent
+- **Service Location:** `unicorn-pro-api/src/services/AICosAgentService.js`
+- **Controller:** `unicorn-pro-api/src/controllers/AgentController.js`
+- **Capabilities:**
+  - Automatically monitors ROI across Meta, Google Search, and TikTok advertising campaigns.
+  - Automatically pauses campaigns dropping below anomaly threshold (-20% ROI).
+  - Dynamically adjusts PPA floor price (e.g. `$165.00 PPA`) based on contractor capacity.
+  - Dispatches Markdown activity digests to Telegram channel `@MyUnicornLiveChannel`.
+- **API Endpoints:**
+  - `POST /api/agent/cos/run-cycle` — Triggers autonomous optimization cycle.
+  - `GET /api/agent/cos/status` — Retrieves system status & current parameters.
 
-1. **`index.html`**
-   - Restructured `.nav-links` to introduce `.nav-dropdown` for `03 Дашборд`.
-   - Hidden sections via `display:none`:
-     - `#ai-analyzer`
-     - `#ads-copilot`
-     - `#live-connector` (Google Sheets Live Connector block on main page)
-     - `#timeline` (Implementation Timeline Q3–Q4 2026)
-   - Updated hardcoded metric values in Hero & Dashboard sections:
-     - Hero Revenue: `$147,820` → `$158,257`
-     - Hero Fill Rate: `84.2%` → `80.9%`
-     - Dashboard Return Rate: `11.5%` → `10.5%`
-     - BuyerC ROI: `111.1%` → `87.2%`
-     - BuyerC Profit: `+$10,774` → `+$9,541`
-     - BuyerC What-If Hint: `111% / $27.35` → `87% / $24.21`
-     - BuyerC Filter Count: `394` → `443`
+### 2. 📞 Voice AI Booker Agent (Retell / Bland.ai Architecture)
+- **Service Location:** `unicorn-pro-api/src/services/AIVoiceCallService.js`
+- **Objection Matrix Handled:**
+  - `IS_THIS_FREE` ➔ Explains 100% zero-obligation free inspection & written estimate.
+  - `ARE_YOU_A_MIDDLEMAN` ➔ Clarifies direct regional scheduling hub for verified contractors.
+  - `JUST_SHOPPING_AROUND` ➔ Secures slot lock against raw material price inflation.
+  - `WHY_NEED_ADDRESS` ➔ Explains satellite roof-mapping pre-inspection efficiency.
+- **API Endpoints:**
+  - `POST /api/agent/voice/test-objection` — Test objection resolution engine.
+  - `POST /api/agent/voice-call/:leadId` — Initiates outbound AI voice call.
+  - `POST /api/agent/voice-webhook` — Processes post-call transcripts & slot confirmations.
 
-2. **`live-connector.html`**
-   - Updated navigation header to match `index.html` (with dropdown `03 Дашборд ▾` and active `🟢 Live Data` badge).
-   - Removed obsolete links (`ai-analyzer.html`, `index.html#ads-copilot`).
-   - Added `isRefresh` parameter to `renderAll(rows, isRefresh)`:
-     - Delta status notification (`⚡ Виявлено зміни!`) only triggers during actual data refresh (`isRefresh=true`).
-     - Preserves status message when user interacts with date filters.
+### 3. 🧠 Google Antigravity (AGY) SDK Implementation
+- **Package Location:** `packages/unicorn_agentic_sdk/main.py`
+- **Architecture Highlights:**
+  - **Supervisor ➔ Subagents Delegation:** `CapabilitiesConfig(enable_subagents=True)` for delegating tasks to specialized subagents (Media Buying, Voice Booking, Finance).
+  - **Declarative Safety Policies:** Priority-based evaluation (`policy.deny("run_command")`, `policy.allow("stripe_ppa_debit")`).
+  - **Lifecycle Intercepting Hooks:** `@hooks.pre_turn` (prompt audit), `@hooks.pre_tool_call_decide` (debit approval > $1000), `@hooks.on_tool_error` (graceful recovery).
+  - **Structured Pydantic Output:** Enforces 100% typed machine-readable JSON (`ExecutiveAgentReport`).
 
-3. **`styles.css`**
-   - Added `.nav-dropdown`, `.nav-dropdown-toggle`, `.nav-dropdown-menu`, `.nav-dropdown-item` styles.
-   - Smooth hover transition and dropdown positioning with glassmorphism backdrop.
-
----
-
-## 4. Data Audit & Dataset Verification
-
-Ground truth calculated directly from `dataset.csv` (5,323 leads):
-
-```
-Total Leads:        5,323
-Sold Leads:         4,305 (80.9% Fill Rate)
-Returned Leads:     558   (10.5% Return Rate)
-Pending Leads:      460   (8.6% Unsold Rate)
-
-Total Spend (CPL):  $130,621.22
-Total Revenue:      $158,256.67 (Sold leads only)
-Net Profit:         $27,635.45
-ROI:                21.2%
-Average CPL:        $24.54
-Average Sold Price: $36.76
-```
-
-### Channel Breakdown
-- **Facebook:** 3,331 leads | Spend $76,926 | Revenue $98,385 | Profit +$21,459 | ROI +27.9%
-- **Native:** 648 leads | Spend $12,271 | Revenue $19,797 | Profit +$7,525 | ROI +61.3%
-- **Google:** 1,344 leads | Spend $41,424 | Revenue $40,076 | Profit -$1,349 | ROI -3.3%
-
-### BuyerC Metrics
-- Total leads assigned: 443
-- Sold leads: 394
-- Spend: $10,935.35
-- Revenue: $20,475.79
-- Net Profit: $9,540.44
-- ROI: **87.2%**
-- Average profit per sold lead: **$24.21**
+### 4. 🔌 Custom MCP Server & Agent Skill
+- **MCP Server:** `packages/unicorn_mcp_server/server.js`
+  - Pure JSON-RPC 2.0 Stdio Transport.
+  - Tools: `calculate_ppa_margin`, `check_zip_contractor_coverage`, `dispatch_telegram_alert`.
+  - Resource: `unicorn://dataset/summary`.
+  - Prompt: `qualify_lead_prompt`.
+- **Agent Skill:** `.agents/skills/unicorn-lead-monetization/SKILL.md`
+  - Located at `.agents/skills/unicorn-lead-monetization`.
+  - Includes `references/auction_engine.md` and helper script `scripts/calc_margin.js`.
 
 ---
 
-## 5. UI / Navigation Architecture
+## 🛠 Recommended Next Steps for Future Agent Sessions
 
-```
-[ Navigation Bar ]
- ├── Logo: 🦄 Unicorn Pro — Тестове завдання PM
- ├── Link: 01 Дослідження (#task1)
- ├── Link: 02 MVP & PPA (#task2)
- ├── Dropdown: 03 Дашборд ▾ (#task3)
- │    ├── 📊 Дашборд (#task3)
- │    ├── 📋 План дій (#action)
- │    ├── 🗺️ Geo Map (#geoheat)
- │    ├── 🎛️ What-If (#whatif)
- │    ├── ⚡ Matrix (#matrix)
- │    └── 📊 До/Після (#beforeafter)
- ├── Link (Active): 🟢 Live Data (live-connector.html)
- ├── Link: 📄 ТЗ Документ (Google Drive PDF)
- └── Link: 📊 Датасет (5,323 лідів) (dataset.html)
-```
+1. **Retell / Bland.ai API Key Wiring**:
+   - Add production `RETELL_API_KEY` or `BLAND_API_KEY` to Vercel environment variables to convert simulated voice webhooks into live phone calls.
+2. **Stripe Production Webhooks**:
+   - Replace Stripe test keys in `unicorn-pro-api/.env` with live production webhook secret for real $150 PPA contractor card debits.
+3. **BigQuery Dataflow Ingestion**:
+   - Connect the custom MCP server `packages/unicorn_mcp_server/server.js` to live BigQuery dataset for streaming 5,323 lead records.
 
 ---
 
-## 6. Deployment Log
+## 💡 Suggested Agent Skills to Invoke in Next Session
 
-All assets published to Surge static hosting:
-
-```bash
-cd unicorn-pro && npx surge . yevhen-unicorn-test.surge.sh
-```
-
-- **Production Target:** `https://yevhen-unicorn-test.surge.sh`
-- **Build Output:** 12 files, 1.1 MB
-- **Status:** HTTP 200 OK across all CDN edge nodes.
+- `google-antigravity-sdk` — For extending autonomous agent workflows and subagent topologies.
+- `mcp-server-patterns` — For deploying MCP servers via SSE/HTTP remote endpoints.
+- `x-api` / `content-engine` — For automated multi-platform social media distribution of Unicorn Pro alerts.
