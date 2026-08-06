@@ -4,6 +4,7 @@ const ContractorScheduleService = require('./ContractorScheduleService');
 const TelegramAlertService = require('./TelegramAlertService');
 const StripeService = require('./StripeService');
 const BigQueryStreamService = require('./BigQueryStreamService');
+const TwilioService = require('./TwilioService');
 
 class AIVoiceCallService {
   /**
@@ -140,6 +141,7 @@ class AIVoiceCallService {
     let stripeDebit = null;
     let calendarEvent = null;
     let bigQueryStream = null;
+    let smsConfirmation = null;
 
     const targetLead = updatedLead || { id: parsedLeadId, serviceType: 'Roofing', name: 'Valued Customer', zipCode: '90210' };
 
@@ -161,7 +163,13 @@ class AIVoiceCallService {
       console.warn('[AIVoiceCallService] BigQuery Streaming warning:', err.message);
     }
 
-    const message = `🎙 *AI VOICE CALL SUCCESSFUL*\n\nLead #${parsedLeadId || 'N/A'} confirmed appointment slot: *${slotToConfirm}*\n\n📋 *Transcript Summary:* ${transcript || 'Confirmed via AI Voice Outbound Booker.'}\n\n💰 *Status:* Upgraded to $150 Pay-Per-Appointment (PPA) Auction!\n💳 *Stripe Debit:* $150.00 Charged (\`${stripeDebit?.transactionId || 'N/A'}\`)\n📅 *Google Calendar:* Event Created (\`${calendarEvent?.eventId || 'N/A'}\`)`;
+    try {
+      smsConfirmation = await TwilioService.sendAppointmentSmsConfirmation(targetLead, slotToConfirm, 'ProRoofing Solutions');
+    } catch (err) {
+      console.warn('[AIVoiceCallService] Twilio SMS warning:', err.message);
+    }
+
+    const message = `🎙 *AI VOICE CALL SUCCESSFUL*\n\nLead #${parsedLeadId || 'N/A'} confirmed appointment slot: *${slotToConfirm}*\n\n📋 *Transcript Summary:* ${transcript || 'Confirmed via AI Voice Outbound Booker.'}\n\n💰 *Status:* Upgraded to $150 Pay-Per-Appointment (PPA) Auction!\n💳 *Stripe Debit:* $150.00 Charged (\`${stripeDebit?.transactionId || 'N/A'}\`)\n📅 *Google Calendar:* Event Created (\`${calendarEvent?.eventId || 'N/A'}\`)\n📱 *Twilio SMS:* Sent (\`${smsConfirmation?.messageSid || 'N/A'}\`)`;
 
     // Notify Telegram
     const chatId = process.env.TELEGRAM_CHAT_ID || '264172207';
@@ -177,7 +185,8 @@ class AIVoiceCallService {
       lead: targetLead,
       stripeDebit,
       calendarEvent,
-      bigQueryStream
+      bigQueryStream,
+      smsConfirmation
     };
   }
 
