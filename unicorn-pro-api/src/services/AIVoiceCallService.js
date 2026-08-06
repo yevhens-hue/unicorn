@@ -29,6 +29,16 @@ class AIVoiceCallService {
    * @returns {Promise<{success: boolean, callId: string, recipientPhone: string, status: string}>}
    */
   static async initiateOutboundCall(lead) {
+    // Explicit TCPA Verification Guard (FCC 1:1 Consent Rule)
+    if (lead && lead.tcpa === false) {
+      console.warn(`[AIVoiceCallService] TCPA Safeguard Triggered: Lead #${lead.id} lacks TCPA consent. AI Outbound call BLOCKED.`);
+      return {
+        success: false,
+        error: 'TCPA_CONSENT_MISSING',
+        message: 'Outbound call blocked: Missing 1:1 TCPA consent certificate'
+      };
+    }
+
     const prompt = this.generateCallPrompt(lead);
     const recipientPhone = lead.phone || '+15550199';
     const blandApiKey = process.env.BLAND_API_KEY;

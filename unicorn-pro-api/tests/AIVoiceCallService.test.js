@@ -33,6 +33,21 @@ describe('AIVoiceCallService (AI Voice Outbound Booker Agent)', () => {
     expect(callResult.recipientPhone).toBe('+15550199');
   }, 15000);
 
+  it('should block outbound AI voice call if TCPA consent is explicitly missing', async () => {
+    const leadWithoutTcpa = {
+      id: 88,
+      name: 'John Doe',
+      phone: '+15550199',
+      serviceType: 'Roofing',
+      tcpa: false
+    };
+
+    const callResult = await AIVoiceCallService.initiateOutboundCall(leadWithoutTcpa);
+
+    expect(callResult.success).toBe(false);
+    expect(callResult.error).toBe('TCPA_CONSENT_MISSING');
+  });
+
   it('should handle AI voice call webhook, extract confirmed appointment, and update lead to PPA_CALLCENTER', async () => {
     const webhookPayload = {
       callId: 'call_live_77',
