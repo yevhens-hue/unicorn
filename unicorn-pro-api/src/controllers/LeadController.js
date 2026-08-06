@@ -5,6 +5,7 @@ const TwilioService = require('../services/TwilioService');
 const TrustedFormService = require('../services/TrustedFormService');
 const BigQueryStreamService = require('../services/BigQueryStreamService');
 const AIAgentService = require('../services/AIAgentService');
+const AIVoiceCallService = require('../services/AIVoiceCallService');
 
 class LeadController {
   static async submitLead(req, res) {
@@ -79,6 +80,14 @@ class LeadController {
         auctionResult.winners, 
         auctionResult.status
       );
+
+      // Trigger Zero-Touch AI Voice Auto-Call for High-Value Leads ($10k+ / Roofing / Solar / Unsold)
+      const isHighValue = aiQualification.estimatedBudget >= 10000 || ['Roofing', 'Solar', 'HVAC', 'Kitchen Remodel'].includes(serviceType);
+      if (isHighValue || auctionResult.status === 'Unsold') {
+        AIVoiceCallService.initiateOutboundCall(newLead).catch(err => {
+          console.warn('[LeadController] Zero-Touch AI Auto-Call error:', err.message);
+        });
+      }
 
       // Trigger Telegram Approval Card if high value
       if (aiQualification.needsApproval) {

@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 const TelegramAlertService = require('./TelegramAlertService');
 const ContractorScheduleService = require('./ContractorScheduleService');
+const StripeService = require('./StripeService');
 
 class AIAgentService {
   /**
@@ -224,7 +225,13 @@ Click below to approve for $150 Pay-Per-Appointment auction:`;
             appointmentStatus: 'Confirmed'
           }
         });
-        return { success: true, message: `✅ Lead #${leadId} approved for PPA auction!`, lead: updatedLead };
+        const stripeDebit = await StripeService.processPpaDebit(leadId, 150, 'Winning PPA Contractor');
+        return { 
+          success: true, 
+          message: `✅ Lead #${leadId} approved for PPA auction!\n💳 Stripe Debited: $150.00 (Txn: ${stripeDebit.transactionId})`, 
+          lead: updatedLead,
+          stripeDebit 
+        };
       } else if (data.startsWith('reject_lead:')) {
         const leadId = parseInt(data.split(':')[1]);
         const updatedLead = await prisma.lead.update({
@@ -265,8 +272,8 @@ Click below to approve for $150 Pay-Per-Appointment auction:`;
             appointmentStatus: 'Confirmed'
           }
         });
-
-        const confirmMsg = `✅ *LEAD #${leadId} RESCHEDULED & CONFIRMED*\n\nNew Slot: *${newSlot}*\nStatus: *Confirmed for $150 PPA Auction*`;
+        const stripeDebit = await StripeService.processPpaDebit(leadId, 150, 'Winning PPA Contractor');
+        const confirmMsg = `✅ *LEAD #${leadId} RESCHEDULED & CONFIRMED*\n\nNew Slot: *${newSlot}*\nStatus: *Confirmed for $150 PPA Auction*\n💳 *Stripe Debit:* $150.00 Charged (\`${stripeDebit.transactionId}\`)`;
 
         if (process.env.TELEGRAM_BOT_TOKEN && chatId) {
           try {
@@ -279,7 +286,8 @@ Click below to approve for $150 Pay-Per-Appointment auction:`;
         return {
           success: true,
           message: `✅ Lead #${leadId} rescheduled to ${newSlot} and confirmed!`,
-          lead: updatedLead
+          lead: updatedLead,
+          stripeDebit
         };
       }
     }
