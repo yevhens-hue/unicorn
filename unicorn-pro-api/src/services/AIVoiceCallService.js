@@ -127,6 +127,17 @@ class AIVoiceCallService {
     // Update lead in Supabase PostgreSQL
     let updatedLead = null;
     if (parsedLeadId) {
+      const existingLead = await prisma.lead.findUnique({ where: { id: parsedLeadId } });
+      if (existingLead && payload.isIdempotentRetry && existingLead.appointmentStatus === 'Confirmed') {
+        console.log(`[AIVoiceCallService] Webhook Idempotency: Lead #${parsedLeadId} is already confirmed. Skipping duplicate processing.`);
+        return {
+          success: true,
+          message: `Webhook idempotency triggered for Lead #${parsedLeadId} (already confirmed)`,
+          lead: existingLead,
+          idempotent: true
+        };
+      }
+
       updatedLead = await prisma.lead.update({
         where: { id: parsedLeadId },
         data: {
