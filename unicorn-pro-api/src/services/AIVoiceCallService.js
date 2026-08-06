@@ -43,7 +43,7 @@ class AIVoiceCallService {
           task: prompt,
           voice: 'nat',
           first_sentence: `Hello ${lead.name}, this is the Unicorn AI Assistant.`,
-          webhook: `${process.env.PUBLIC_API_URL || 'https://unicorn-pro-api-yevhens-hues-projects.vercel.app'}/api/agent/voice-webhook`
+          webhook: `${process.env.PUBLIC_API_URL || 'https://unicorn-pro-api-backend.vercel.app'}/api/agent/voice-webhook`
         });
 
         const resData = await new Promise((resolve, reject) => {
@@ -59,22 +59,38 @@ class AIVoiceCallService {
           }, (res) => {
             let body = '';
             res.on('data', chunk => body += chunk);
-            res.on('end', () => resolve(JSON.parse(body)));
+            res.on('end', () => resolve({ statusCode: res.statusCode, data: JSON.parse(body) }));
           });
           req.on('error', reject);
           req.write(payload);
           req.end();
         });
 
+        // Surface Bland.ai errors clearly instead of silent fallback
+        if (resData.statusCode !== 200 || resData.data?.status === 'error') {
+          const errorMsg = resData.data?.message || 'Unknown Bland.ai error';
+          console.error(`[AIVoiceCallService] Bland.ai error (${resData.statusCode}): ${errorMsg}`);
+          return {
+            success: false,
+            provider: 'Bland.ai',
+            error: errorMsg,
+            statusCode: resData.statusCode,
+            recipientPhone,
+            hint: 'International numbers require enabling on Bland.ai dashboard. Go to app.bland.ai → Settings → International Calls'
+          };
+        }
+
         return {
           success: true,
-          callId: resData.call_id || `call_${Date.now()}`,
+          callId: resData.data.call_id,
           recipientPhone,
           status: 'initiated',
-          providerResponse: resData
+          provider: 'Bland.ai',
+          providerResponse: resData.data
         };
       } catch (err) {
-        console.warn('[AIVoiceCallService] Bland.ai API fallback:', err.message);
+        console.error('[AIVoiceCallService] Bland.ai API error:', err.message);
+        return { success: false, error: err.message, provider: 'Bland.ai' };
       }
     }
 
