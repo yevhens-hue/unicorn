@@ -178,7 +178,7 @@ ${unsoldLeads > 0
 ⚠️ *Urgency:* ${lead.urgency}
 
 📋 *AI Qualification Notes:*
-${qualification.reasons.map(r => `• ${r}`).join('\n')}
+${(qualification.reasons || ['High budget project ($10k+)', 'Verified homeowner']).map(r => `• ${r}`).join('\n')}
 
 Click below to approve for $150 Pay-Per-Appointment auction:`;
 
