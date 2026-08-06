@@ -13,21 +13,6 @@ const TelegramAlertService = require('./src/services/TelegramAlertService');
 const AIAgentService = require('./src/services/AIAgentService');
 const AIVoiceCallService = require('./src/services/AIVoiceCallService');
 
-// Top-level Agent Controller route interceptor (Pre-normalization)
-app.use((req, res, next) => {
-  const fullUrl = (req.originalUrl || req.url || '').toLowerCase();
-  if (fullUrl.includes('agent/cos/run-cycle')) {
-    return AgentController.runCosCycle(req, res, next);
-  }
-  if (fullUrl.includes('agent/cos/status')) {
-    return AgentController.getCosStatus(req, res, next);
-  }
-  if (fullUrl.includes('agent/voice/test-objection')) {
-    return AgentController.testObjection(req, res, next);
-  }
-  next();
-});
-
 // Normalize Vercel serverless URLs (e.g. /agent/digest -> /api/agent/digest)
 app.use((req, res, next) => {
   if (req.url.startsWith('/api/api/')) {
@@ -39,9 +24,12 @@ app.use((req, res, next) => {
 });
 
 // ---------------------------------------------------------
-// PING-POST ENGINE
+// PING-POST ENGINE & AI AGENT ENDPOINTS
 // ---------------------------------------------------------
 app.post('/api/leads', LeadController.submitLead);
+app.post('/api/agent/cos/run-cycle', AgentController.runCosCycle);
+app.get('/api/agent/cos/status', AgentController.getCosStatus);
+app.post('/api/agent/voice/test-objection', AgentController.testObjection);
 
 // Public Telegram Activity Feed API for live website streaming
 const handleTelegramLiveFeed = (req, res) => {
