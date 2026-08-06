@@ -28,19 +28,6 @@ const AIVoiceCallService = require('./src/services/AIVoiceCallService');
 // ---------------------------------------------------------
 app.post('/api/leads', LeadController.submitLead);
 
-// AI COS Autonomous Agent & Voice Booker Endpoints
-app.post('/api/agent/cos/run-cycle', AgentController.runCosCycle);
-app.post('/agent/cos/run-cycle', AgentController.runCosCycle);
-app.post('/api/api/agent/cos/run-cycle', AgentController.runCosCycle);
-
-app.get('/api/agent/cos/status', AgentController.getCosStatus);
-app.get('/agent/cos/status', AgentController.getCosStatus);
-app.get('/api/api/agent/cos/status', AgentController.getCosStatus);
-
-app.post('/api/agent/voice/test-objection', AgentController.testObjection);
-app.post('/agent/voice/test-objection', AgentController.testObjection);
-app.post('/api/api/agent/voice/test-objection', AgentController.testObjection);
-
 // Public Telegram Activity Feed API for live website streaming
 const handleTelegramLiveFeed = (req, res) => {
   const dispatches = TelegramAlertService.getRecentDispatches();
@@ -58,6 +45,17 @@ app.get('/telegram/live-feed', handleTelegramLiveFeed);
 // ---------------------------------------------------------
 // AI COS AGENT (Chief of Staff) & VOICE OUTBOUND BOOKER API
 // ---------------------------------------------------------
+app.post('/api/agent/cos/run-cycle', AgentController.runCosCycle);
+app.post('/agent/cos/run-cycle', AgentController.runCosCycle);
+app.post('/api/api/agent/cos/run-cycle', AgentController.runCosCycle);
+
+app.get('/api/agent/cos/status', AgentController.getCosStatus);
+app.get('/agent/cos/status', AgentController.getCosStatus);
+app.get('/api/api/agent/cos/status', AgentController.getCosStatus);
+
+app.post('/api/agent/voice/test-objection', AgentController.testObjection);
+app.post('/agent/voice/test-objection', AgentController.testObjection);
+app.post('/api/api/agent/voice/test-objection', AgentController.testObjection);
 const handleVoiceCall = async (req, res) => {
   try {
     const leadId = parseInt(req.params.leadId);
