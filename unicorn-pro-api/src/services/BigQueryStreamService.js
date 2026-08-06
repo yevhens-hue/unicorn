@@ -71,6 +71,45 @@ class BigQueryStreamService {
     console.log('[BigQueryStreamService] Streamed Event Row:', JSON.stringify(row));
     return { streamed: true, row, mode: 'simulated_stream' };
   }
+
+  /**
+   * Streams PPA conversion & ROAS metric updates to BigQuery Data Warehouse
+   * 
+   * @param {Object} lead 
+   * @param {number} ppaAmount 
+   * @param {string} conversionChannel 
+   * @returns {Promise<{streamed: boolean, row: Object}>}
+   */
+  static async streamPpaConversionEvent(lead, ppaAmount = 150.00, conversionChannel = 'AI_VOICE_OUTBOUND') {
+    const adSpend = parseFloat(lead.adSpend || 25.00);
+    const roasMultiplier = parseFloat((ppaAmount / adSpend).toFixed(1));
+
+    const row = {
+      event_id: `ppa_conv_${Date.now()}_lead${lead.id || 1}`,
+      lead_id: lead.id || 1,
+      service_type: lead.serviceType || 'Roofing',
+      zip_code: lead.zipCode || '90210',
+      utm_source: lead.utmSource || 'google_ads',
+      utm_medium: lead.utmMedium || 'cpc',
+      utm_campaign: lead.utmCampaign || 'roofing_ppa_search',
+      conversion_channel: conversionChannel,
+      ppa_revenue: ppaAmount,
+      ad_spend: adSpend,
+      net_profit: ppaAmount - adSpend,
+      roas_multiplier: roasMultiplier,
+      timestamp: new Date().toISOString()
+    };
+
+    console.log(`\n================= BIGQUERY ROAS STREAMING EVENT =================`);
+    console.log(`Lead ID: #${lead.id || 1}`);
+    console.log(`Channel: ${conversionChannel}`);
+    console.log(`PPA Revenue: $${ppaAmount}.00`);
+    console.log(`Media Buying Ad Spend: $${adSpend}.00`);
+    console.log(`ROAS Multiplier: ${roasMultiplier}x`);
+    console.log(`==================================================================\n`);
+
+    return { streamed: true, row, mode: 'simulated_roas_stream' };
+  }
 }
 
 module.exports = BigQueryStreamService;

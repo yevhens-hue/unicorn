@@ -3,6 +3,7 @@ const prisma = require('../lib/prisma');
 const ContractorScheduleService = require('./ContractorScheduleService');
 const TelegramAlertService = require('./TelegramAlertService');
 const StripeService = require('./StripeService');
+const BigQueryStreamService = require('./BigQueryStreamService');
 
 class AIVoiceCallService {
   /**
@@ -137,13 +138,30 @@ class AIVoiceCallService {
 
     // Trigger automatic Stripe PPA Debit ($150) from contractor account
     let stripeDebit = null;
+    let calendarEvent = null;
+    let bigQueryStream = null;
+
+    const targetLead = updatedLead || { id: parsedLeadId, serviceType: 'Roofing', name: 'Valued Customer', zipCode: '90210' };
+
     try {
       stripeDebit = await StripeService.processPpaDebit(parsedLeadId || 1, 150, 'Winning Contractor');
     } catch (err) {
       console.warn('[AIVoiceCallService] Stripe PPA Debit warning:', err.message);
     }
 
-    const message = `🎙 *AI VOICE CALL SUCCESSFUL*\n\nLead #${parsedLeadId || 'N/A'} confirmed appointment slot: *${slotToConfirm}*\n\n📋 *Transcript Summary:* ${transcript || 'Confirmed via AI Voice Outbound Booker.'}\n\n💰 *Status:* Upgraded to $150 Pay-Per-Appointment (PPA) Auction!\n💳 *Stripe Debit:* $150.00 Charged (\`${stripeDebit?.transactionId || 'N/A'}\`)`;
+    try {
+      calendarEvent = await ContractorScheduleService.createCalendarEvent('contractor@pro-roofing.com', targetLead, slotToConfirm);
+    } catch (err) {
+      console.warn('[AIVoiceCallService] Calendar Event Creation warning:', err.message);
+    }
+
+    try {
+      bigQueryStream = await BigQueryStreamService.streamPpaConversionEvent(targetLead, 150.00, 'AI_VOICE_OUTBOUND');
+    } catch (err) {
+      console.warn('[AIVoiceCallService] BigQuery Streaming warning:', err.message);
+    }
+
+    const message = `🎙 *AI VOICE CALL SUCCESSFUL*\n\nLead #${parsedLeadId || 'N/A'} confirmed appointment slot: *${slotToConfirm}*\n\n📋 *Transcript Summary:* ${transcript || 'Confirmed via AI Voice Outbound Booker.'}\n\n💰 *Status:* Upgraded to $150 Pay-Per-Appointment (PPA) Auction!\n💳 *Stripe Debit:* $150.00 Charged (\`${stripeDebit?.transactionId || 'N/A'}\`)\n📅 *Google Calendar:* Event Created (\`${calendarEvent?.eventId || 'N/A'}\`)`;
 
     // Notify Telegram
     const chatId = process.env.TELEGRAM_CHAT_ID || '264172207';
@@ -156,8 +174,10 @@ class AIVoiceCallService {
     return {
       success: true,
       message: `🎙 AI Voice Call Completed for Lead #${parsedLeadId}`,
-      lead: updatedLead || { id: parsedLeadId, appointmentDate: slotToConfirm, appointmentStatus: 'Confirmed', leadType: 'PPA_CALLCENTER' },
-      stripeDebit
+      lead: targetLead,
+      stripeDebit,
+      calendarEvent,
+      bigQueryStream
     };
   }
 

@@ -2,6 +2,7 @@ const prisma = require('../lib/prisma');
 const TelegramAlertService = require('./TelegramAlertService');
 const ContractorScheduleService = require('./ContractorScheduleService');
 const StripeService = require('./StripeService');
+const BigQueryStreamService = require('./BigQueryStreamService');
 
 class AIAgentService {
   /**
@@ -273,7 +274,10 @@ Click below to approve for $150 Pay-Per-Appointment auction:`;
           }
         });
         const stripeDebit = await StripeService.processPpaDebit(leadId, 150, 'Winning PPA Contractor');
-        const confirmMsg = `✅ *LEAD #${leadId} RESCHEDULED & CONFIRMED*\n\nNew Slot: *${newSlot}*\nStatus: *Confirmed for $150 PPA Auction*\n💳 *Stripe Debit:* $150.00 Charged (\`${stripeDebit.transactionId}\`)`;
+        const calendarEvent = await ContractorScheduleService.createCalendarEvent('contractor@pro-roofing.com', updatedLead || { id: leadId, serviceType: 'Roofing', name: 'Valued Customer' }, newSlot);
+        const bigQueryStream = await BigQueryStreamService.streamPpaConversionEvent(updatedLead || { id: leadId, serviceType: 'Roofing' }, 150.00, 'TELEGRAM_BOT_INTERACTIVE');
+
+        const confirmMsg = `✅ *LEAD #${leadId} RESCHEDULED & CONFIRMED*\n\nNew Slot: *${newSlot}*\nStatus: *Confirmed for $150 PPA Auction*\n💳 *Stripe Debit:* $150.00 Charged (\`${stripeDebit.transactionId}\`)\n📅 *Google Calendar:* Event Created (\`${calendarEvent.eventId}\`)`;
 
         if (process.env.TELEGRAM_BOT_TOKEN && chatId) {
           try {
@@ -287,7 +291,9 @@ Click below to approve for $150 Pay-Per-Appointment auction:`;
           success: true,
           message: `✅ Lead #${leadId} rescheduled to ${newSlot} and confirmed!`,
           lead: updatedLead,
-          stripeDebit
+          stripeDebit,
+          calendarEvent,
+          bigQueryStream
         };
       }
     }
