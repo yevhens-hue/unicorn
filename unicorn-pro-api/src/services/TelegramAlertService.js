@@ -1,7 +1,14 @@
-const prisma = require('../lib/prisma');
-const https = require('https');
+// In-memory public audit log for live website streaming (Stores last 20 Telegram messages)
+const recentDispatches = [];
 
 class TelegramAlertService {
+  /**
+   * Returns recent Telegram dispatches for public website activity feed.
+   */
+  static getRecentDispatches() {
+    return recentDispatches;
+  }
+
   /**
    * Checks the platform Fill Rate. If below 70%, logs an alert message.
    */
@@ -55,6 +62,17 @@ class TelegramAlertService {
     console.log(`To Chat ID: ${finalChatId}`);
     console.log(messageText);
     console.log(`============================================================\n`);
+
+    // Store in public audit log array
+    recentDispatches.unshift({
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+      chatId: finalChatId,
+      botUsername: '@Unicornmarketingbot',
+      message: messageText,
+      inlineKeyboard,
+      timestamp: new Date().toISOString()
+    });
+    if (recentDispatches.length > 20) recentDispatches.pop();
 
     const payloadObj = {
       chat_id: finalChatId,

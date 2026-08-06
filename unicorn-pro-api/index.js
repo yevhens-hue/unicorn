@@ -27,6 +27,20 @@ const AIVoiceCallService = require('./src/services/AIVoiceCallService');
 // ---------------------------------------------------------
 app.post('/api/leads', LeadController.submitLead);
 
+// Public Telegram Activity Feed API for live website streaming
+const handleTelegramLiveFeed = (req, res) => {
+  const dispatches = TelegramAlertService.getRecentDispatches();
+  res.json({
+    status: 'online',
+    botUsername: '@Unicornmarketingbot',
+    chatId: '264172207',
+    totalDispatches: dispatches.length,
+    dispatches
+  });
+};
+app.get('/api/telegram/live-feed', handleTelegramLiveFeed);
+app.get('/telegram/live-feed', handleTelegramLiveFeed);
+
 // ---------------------------------------------------------
 // AI COS AGENT (Chief of Staff) & VOICE OUTBOUND BOOKER API
 // ---------------------------------------------------------
