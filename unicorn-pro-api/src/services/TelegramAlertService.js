@@ -56,17 +56,19 @@ class TelegramAlertService {
     }
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN || '8831027970:AAH2CIPE_9HQwyjG3Mpbkqh79C4PVk041JQ';
-    const finalChatId = targetChatId || process.env.TELEGRAM_CHAT_ID || '264172207';
+    const primaryChatId = targetChatId || process.env.TELEGRAM_CHAT_ID || '264172207';
+    const publicChannelId = process.env.TELEGRAM_CHANNEL_ID || '@UnicornProLiveAlerts';
 
     console.log(`\n================= DISPATCHING TELEGRAM ALERT =================`);
-    console.log(`To Chat ID: ${finalChatId}`);
+    console.log(`To Primary Chat ID: ${primaryChatId} | Public Channel: ${publicChannelId}`);
     console.log(messageText);
     console.log(`============================================================\n`);
 
     // Store in public audit log array
     recentDispatches.unshift({
       id: `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-      chatId: finalChatId,
+      chatId: primaryChatId,
+      channelId: publicChannelId,
       botUsername: '@Unicornmarketingbot',
       message: messageText,
       inlineKeyboard,
@@ -74,42 +76,56 @@ class TelegramAlertService {
     });
     if (recentDispatches.length > 20) recentDispatches.pop();
 
-    const payloadObj = {
-      chat_id: finalChatId,
-      text: messageText,
-      parse_mode: 'Markdown'
-    };
-    if (inlineKeyboard) {
-      payloadObj.reply_markup = inlineKeyboard;
-    }
-    const payload = JSON.stringify(payloadObj);
+    const sendSingle = (targetId) => {
+      const payloadObj = {
+        chat_id: targetId,
+        text: messageText,
+        parse_mode: 'Markdown'
+      };
+      if (inlineKeyboard) {
+        payloadObj.reply_markup = inlineKeyboard;
+      }
+      const payload = JSON.stringify(payloadObj);
 
-    return new Promise((resolve) => {
-      const req = https.request({
-        hostname: 'api.telegram.org',
-        path: `/bot${botToken}/sendMessage`,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(payload)
-        }
-      }, (res) => {
-        let body = '';
-        res.on('data', chunk => body += chunk);
-        res.on('end', () => {
-          console.log('[TelegramAlertService] Telegram API Response:', body);
-          resolve(body);
+      return new Promise((resolve) => {
+        const req = https.request({
+          hostname: 'api.telegram.org',
+          path: `/bot${botToken}/sendMessage`,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(payload)
+          }
+        }, (res) => {
+          let body = '';
+          res.on('data', chunk => body += chunk);
+          res.on('end', () => resolve(body));
         });
-      });
 
-      req.on('error', (err) => {
-        console.error('[TelegramAlertService] HTTP Request Error:', err.message);
-        resolve(null);
-      });
+        req.on('error', (err) => {
+          console.error('[TelegramAlertService] HTTP Request Error:', err.message);
+          resolve(null);
+        });
 
-      req.write(payload);
-      req.end();
-    });
+        req.write(payload);
+        req.end();
+      });
+    };
+
+    // Primary dispatch to Admin Chat ID
+    const resPrimary = await sendSingle(primaryChatId);
+    console.log('[TelegramAlertService] Primary Chat Response:', resPrimary);
+
+    // Optional Broadcast dispatch to Public Channel if targetId is not already the channel
+    if (publicChannelId && publicChannelId !== primaryChatId) {
+      sendSingle(publicChannelId).then(resChan => {
+        console.log('[TelegramAlertService] Public Channel Broadcast Response:', resChan);
+      }).catch(err => {
+        console.warn('[TelegramAlertService] Channel broadcast note:', err.message);
+      });
+    }
+
+    return resPrimary;
   }
 }
 
