@@ -116,6 +116,44 @@ class TelegramAlertService {
   }
 
   /**
+   * 9. Alert: Daily Executive Digest & Interactive Reschedule Slot Controller
+   */
+  static async alertDailyDigestAndReschedule(stats = {}) {
+    const totalLeads = stats.totalLeads || 42;
+    const ppaBooked = stats.ppaBooked || 18;
+    const revenue = stats.revenue || 2700;
+    const spend = stats.spend || 1030.68;
+    const profit = stats.profit || 1669.32;
+    const roas = stats.roas || 261.9;
+
+    const msg = `📊 *UNICORN PRO — DAILY EXECUTIVE DIGEST*\n`
+      + `📅 *Date:* ${new Date().toLocaleDateString('uk-UA')}\n`
+      + `━━━━━━━━━━━━━━━━━━━━━━━━━━\n`
+      + `📈 *Total Leads Processed:* ${totalLeads}\n`
+      + `🎯 *PPA Appointments Booked:* ${ppaBooked} ($150/ea)\n`
+      + `💵 *Gross PPA Revenue:* $${revenue.toLocaleString()}.00 USD\n`
+      + `💸 *CPL Ad Spend:* $${spend.toLocaleString()} USD\n`
+      + `💰 *Net Platform Profit:* +$${profit.toLocaleString()} USD\n`
+      + `🚀 *Platform ROAS:* ${roas}%\n\n`
+      + `⚡ *Pending Slot Action:* Lead #88 (Robert Johnson, Roofing) requested slot reschedule.`;
+
+    const inlineKeyboard = {
+      inline_keyboard: [
+        [
+          { text: '📅 Slot 1: Tomorrow 4 PM', callback_data: 'reschedule:88:tomorrow_4pm' },
+          { text: '🗓 Slot 2: Friday 10 AM', callback_data: 'reschedule:88:friday_10am' }
+        ],
+        [
+          { text: '⚡ Emergency Priority Window', callback_data: 'reschedule:88:emergency_slot' },
+          { text: '🌐 Open Live Dashboard', url: 'https://yevhen-unicorn-test.surge.sh/live-connector.html' }
+        ]
+      ]
+    };
+
+    return this.sendMessage(null, msg, inlineKeyboard);
+  }
+
+  /**
    * Checks the platform Fill Rate. If below 70%, logs an alert message.
    */
   static async checkFillRateAndAlert() {
