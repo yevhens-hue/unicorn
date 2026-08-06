@@ -559,20 +559,22 @@ export default function B2CFunnel() {
           )}
 
           {/* STEP 6: Phase 1 Instant Slot Booking (PPA) */}
-          {step === 6 && (
-            <motion.div key="step6" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="wizard-step">
-              <div className="ppa-badge-header">⚡ Phase 1: Instant Appointment Booking</div>
-              <h2>Select a date & time for your free in-home estimate:</h2>
-              <p className="wizard-sub" style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '20px' }}>
-                Skip the phone call queue! Homeowners who lock in a slot receive guaranteed $250 priority scheduling.
-              </p>
+          {step === 6 && (() => {
+            const nextDays = getNextDays();
+            return (
+              <motion.div key="step6" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="wizard-step">
+                <div className="ppa-badge-header">⚡ Phase 1: Instant Appointment Booking</div>
+                <h2>Select a date & time for your free in-home estimate:</h2>
+                <p className="wizard-sub" style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '20px' }}>
+                  Skip the phone call queue! Homeowners who lock in a slot receive guaranteed $250 priority scheduling.
+                </p>
 
               <div className="slot-selection-container">
                 <label className="slot-label">Select Date:</label>
                 <div className="wizard-grid-3col mb-4">
-                  {getNextDays().map(d => {
+                  {nextDays.map(d => {
                     const dateStr = `${d.day}, ${d.date}`;
-                    const isSelected = formData.appointmentDate === dateStr;
+                    const isSelected = (formData.appointmentDate || `${nextDays[0]?.day}, ${nextDays[0]?.date}`) === dateStr;
                     return (
                       <button
                         key={d.date}
@@ -590,10 +592,11 @@ export default function B2CFunnel() {
                 <label className="slot-label">Select Time Window:</label>
                 <div className="wizard-grid-3col mb-4">
                   {['9:00 AM - 11:00 AM', '1:00 PM - 3:00 PM', '4:00 PM - 6:00 PM'].map(t => {
-                    const isSelected = formData.appointmentTime === t;
+                    const isSelected = (formData.appointmentTime || '9:00 AM - 11:00 AM') === t;
                     return (
                       <button
                         key={t}
+                        type="button"
                         className={`wizard-option-btn ${isSelected ? 'selected' : ''}`}
                         onClick={() => update({ appointmentTime: t })}
                       >
@@ -605,9 +608,20 @@ export default function B2CFunnel() {
               </div>
 
               <button
+                type="button"
                 className="btn-primary btn-submit-huge mt-4"
-                onClick={() => handleSubmit({ leadType: 'PPA_ONLINE', appointmentStatus: 'Confirmed' })}
-                disabled={loading || !formData.appointmentDate || !formData.appointmentTime}
+                onClick={() => {
+                  const defaultDate = nextDays[0] ? `${nextDays[0].day}, ${nextDays[0].date}` : 'Tomorrow';
+                  const selectedDate = formData.appointmentDate || defaultDate;
+                  const selectedTime = formData.appointmentTime || '9:00 AM - 11:00 AM';
+                  handleSubmit({
+                    leadType: 'PPA_ONLINE',
+                    appointmentDate: selectedDate,
+                    appointmentTime: selectedTime,
+                    appointmentStatus: 'Confirmed'
+                  });
+                }}
+                disabled={loading}
               >
                 {loading ? 'Confirming Slot...' : '📅 Confirm Priority Appointment Slot'}
               </button>
@@ -625,7 +639,8 @@ export default function B2CFunnel() {
 
               <button className="btn-back mt-3" onClick={() => setStep(5)}>← Back</button>
             </motion.div>
-          )}
+            );
+          })()}
         </AnimatePresence>
       </div>
     </div>
