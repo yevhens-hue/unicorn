@@ -57,7 +57,7 @@ class TelegramAlertService {
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN || '8831027970:AAH2CIPE_9HQwyjG3Mpbkqh79C4PVk041JQ';
     const primaryChatId = targetChatId || process.env.TELEGRAM_CHAT_ID || '264172207';
-    const publicChannelId = process.env.TELEGRAM_CHANNEL_ID || '@UnicornProLiveAlerts';
+    const publicChannelId = process.env.TELEGRAM_CHANNEL_ID || '@MyUnicornLiveChannel';
 
     console.log(`\n================= DISPATCHING TELEGRAM ALERT =================`);
     console.log(`To Primary Chat ID: ${primaryChatId} | Public Channel: ${publicChannelId}`);
