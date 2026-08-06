@@ -378,6 +378,17 @@ export default function B2BPortal() {
             {/* INBOX */}
             {activeTab === 'inbox' && (
               <div className="inbox-view">
+                <div style={{ background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(59, 130, 246, 0.2))', border: '1px solid rgba(167, 139, 250, 0.4)', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a78bfa', marginBottom: '4px' }}>⚡ LIVE DALLAS & TEXAS STREAM</div>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#fff' }}>30+ Exclusive PPA Leads ($150) Available Today in ZIP 75001</div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>🎁 $300 Free Trial Credit Active (2 Verified Appointments On Us)</div>
+                  </div>
+                  <div style={{ background: '#10b981', color: '#fff', fontSize: '12px', fontWeight: '800', padding: '6px 14px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Active Trial: $300.00
+                  </div>
+                </div>
+
                 <header className="view-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <h2>Lead Inbox</h2>
