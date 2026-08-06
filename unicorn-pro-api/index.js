@@ -6,6 +6,28 @@ const prisma = require('./src/lib/prisma');
 app.use(cors());
 app.use(express.json());
 
+const LeadController = require('./src/controllers/LeadController');
+const BillingController = require('./src/controllers/BillingController');
+const AgentController = require('./src/controllers/AgentController');
+const TelegramAlertService = require('./src/services/TelegramAlertService');
+const AIAgentService = require('./src/services/AIAgentService');
+const AIVoiceCallService = require('./src/services/AIVoiceCallService');
+
+// Top-level Agent Controller route interceptor (Pre-normalization)
+app.use((req, res, next) => {
+  const fullUrl = (req.originalUrl || req.url || '').toLowerCase();
+  if (fullUrl.includes('agent/cos/run-cycle')) {
+    return AgentController.runCosCycle(req, res, next);
+  }
+  if (fullUrl.includes('agent/cos/status')) {
+    return AgentController.getCosStatus(req, res, next);
+  }
+  if (fullUrl.includes('agent/voice/test-objection')) {
+    return AgentController.testObjection(req, res, next);
+  }
+  next();
+});
+
 // Normalize Vercel serverless URLs (e.g. /agent/digest -> /api/agent/digest)
 app.use((req, res, next) => {
   if (req.url.startsWith('/api/api/')) {
@@ -15,13 +37,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-const LeadController = require('./src/controllers/LeadController');
-const BillingController = require('./src/controllers/BillingController');
-const AgentController = require('./src/controllers/AgentController');
-const TelegramAlertService = require('./src/services/TelegramAlertService');
-const AIAgentService = require('./src/services/AIAgentService');
-const AIVoiceCallService = require('./src/services/AIVoiceCallService');
 
 // ---------------------------------------------------------
 // PING-POST ENGINE
