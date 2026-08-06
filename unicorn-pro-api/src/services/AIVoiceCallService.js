@@ -18,7 +18,11 @@ class AIVoiceCallService {
     const slot1Text = slots[0]?.slotText || 'Tomorrow morning at 9:00 AM';
     const slot2Text = slots[1]?.slotText || 'Tomorrow afternoon at 2:00 PM';
 
-    return `Hello ${lead.name || 'Valued Customer'}! This is the Unicorn AI Home Services Assistant calling to confirm your estimate appointment for ${lead.serviceType || 'Home Service'} in ZIP code ${lead.zipCode || 'your area'}. Our top-rated licensed contractor has open slots on ${slot1Text} or ${slot2Text}. Which of these times works best for you?`;
+    return `Hello ${lead.name || 'Valued Customer'}! This is the Unicorn AI Home Services Assistant calling to confirm your estimate appointment for ${lead.serviceType || 'Home Service'} in ZIP code ${lead.zipCode || 'your area'}. Our top-rated licensed contractor has open slots on ${slot1Text} or ${slot2Text}. Which of these times works best for you?
+
+STRICT BOUNDARY INSTRUCTIONS:
+1. You are an Appointment Booking Assistant. Your ONLY goal is to confirm one of the two slots: ${slot1Text} or ${slot2Text}.
+2. If the homeowner asks any complex, technical, or pricing question outside appointment scheduling, politely say: "I have logged your technical question and I am transferring your file to our Lead Chief Engineer for immediate review." and conclude the call.`;
   }
 
   /**
