@@ -100,6 +100,7 @@ const handleSystemStatus = async (req, res) => {
 };
 app.get('/api/agent/system-status', handleSystemStatus);
 app.get('/agent/system-status', handleSystemStatus);
+app.get('/api/api/agent/system-status', handleSystemStatus);
 
 // ---------------------------------------------------------
 // AI COS AGENT (Chief of Staff) API
