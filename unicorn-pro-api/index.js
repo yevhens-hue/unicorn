@@ -42,20 +42,19 @@ const handleTelegramLiveFeed = (req, res) => {
 app.get('/api/telegram/live-feed', handleTelegramLiveFeed);
 app.get('/telegram/live-feed', handleTelegramLiveFeed);
 
-// ---------------------------------------------------------
-// AI COS AGENT (Chief of Staff) & VOICE OUTBOUND BOOKER API
-// ---------------------------------------------------------
-app.post('/api/agent/cos/run-cycle', AgentController.runCosCycle);
-app.post('/agent/cos/run-cycle', AgentController.runCosCycle);
-app.post('/api/api/agent/cos/run-cycle', AgentController.runCosCycle);
-
-app.get('/api/agent/cos/status', AgentController.getCosStatus);
-app.get('/agent/cos/status', AgentController.getCosStatus);
-app.get('/api/api/agent/cos/status', AgentController.getCosStatus);
-
-app.post('/api/agent/voice/test-objection', AgentController.testObjection);
-app.post('/agent/voice/test-objection', AgentController.testObjection);
-app.post('/api/api/agent/voice/test-objection', AgentController.testObjection);
+// AI COS Autonomous Agent & Voice Booker Endpoints (Bulletproof Vercel Path Matcher)
+app.use((req, res, next) => {
+  if (req.path.includes('agent/cos/run-cycle')) {
+    return AgentController.runCosCycle(req, res, next);
+  }
+  if (req.path.includes('agent/cos/status')) {
+    return AgentController.getCosStatus(req, res, next);
+  }
+  if (req.path.includes('agent/voice/test-objection')) {
+    return AgentController.testObjection(req, res, next);
+  }
+  next();
+});
 const handleVoiceCall = async (req, res) => {
   try {
     const leadId = parseInt(req.params.leadId);
