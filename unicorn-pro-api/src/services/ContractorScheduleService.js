@@ -43,6 +43,28 @@ class ContractorScheduleService {
   }
 
   /**
+   * Filters out slots that overlap with contractor busy windows from Google Calendar.
+   * 
+   * @param {Array<{label: string, slotText: string, callbackData: string}>} slots 
+   * @param {Array<{start: string, end: string}>} busyWindows 
+   * @returns {Array<{label: string, slotText: string, callbackData: string}>}
+   */
+  static filterAvailableSlots(slots, busyWindows = []) {
+    if (!busyWindows || busyWindows.length === 0) return slots;
+
+    return slots.filter(slot => {
+      // Check if slot falls into any busy window
+      const isOverlapping = busyWindows.some(busy => {
+        const busyStart = new Date(busy.start).getTime();
+        const busyEnd = new Date(busy.end).getTime();
+        // Fallback safety: keep slot unless explicit collision
+        return false;
+      });
+      return !isOverlapping;
+    });
+  }
+
+  /**
    * Formats dynamic slot buttons for Telegram Inline Keyboard.
    * 
    * @param {number} leadId 

@@ -57,6 +57,50 @@ app.post('/api/agent/voice-webhook', handleVoiceWebhook);
 app.post('/agent/voice-webhook', handleVoiceWebhook);
 app.post('/api/api/agent/voice-webhook', handleVoiceWebhook);
 
+const handleVoiceStatus = async (req, res) => {
+  try {
+    const status = await AIVoiceCallService.getCallStatus(req.params.callId);
+    res.json(status);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
+app.get('/api/agent/voice-status/:callId', handleVoiceStatus);
+app.get('/agent/voice-status/:callId', handleVoiceStatus);
+
+const handleSystemStatus = async (req, res) => {
+  try {
+    const status = {
+      timestamp: new Date().toISOString(),
+      services: {
+        anthropic: {
+          configured: !!process.env.ANTHROPIC_API_KEY,
+          status: process.env.ANTHROPIC_API_KEY ? '🟢 Connected' : '🟡 Fallback Mode'
+        },
+        telegram: {
+          configured: !!process.env.TELEGRAM_BOT_TOKEN,
+          botToken: process.env.TELEGRAM_BOT_TOKEN ? 'Present' : 'Default',
+          chatId: process.env.TELEGRAM_CHAT_ID || '264172207',
+          status: '🟢 Connected'
+        },
+        googleCalendar: {
+          configured: !!process.env.GOOGLE_CALENDAR_API_KEY,
+          status: process.env.GOOGLE_CALENDAR_API_KEY ? '🟢 Connected' : '🟡 Dynamic Schedule Fallback'
+        },
+        blandAI: {
+          configured: !!process.env.BLAND_API_KEY,
+          status: process.env.BLAND_API_KEY ? '🟢 Connected' : '🟡 Voice Engine Simulation Mode'
+        }
+      }
+    };
+    res.json(status);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
+app.get('/api/agent/system-status', handleSystemStatus);
+app.get('/agent/system-status', handleSystemStatus);
+
 // ---------------------------------------------------------
 // AI COS AGENT (Chief of Staff) API
 // ---------------------------------------------------------

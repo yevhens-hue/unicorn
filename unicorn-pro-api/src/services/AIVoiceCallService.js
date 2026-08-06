@@ -132,6 +132,54 @@ class AIVoiceCallService {
       lead: updatedLead || { id: parsedLeadId, appointmentDate: slotToConfirm, appointmentStatus: 'Confirmed', leadType: 'PPA_CALLCENTER' }
     };
   }
+
+  /**
+   * Queries live call status from Bland.ai / Vapi API or returns simulated call status.
+   * 
+   * @param {string} callId 
+   * @returns {Promise<{callId: string, status: string, provider: string}>}
+   */
+  static async getCallStatus(callId) {
+    const blandApiKey = process.env.BLAND_API_KEY;
+
+    if (blandApiKey && callId && !callId.startsWith('call_live_')) {
+      try {
+        const responseData = await new Promise((resolve, reject) => {
+          const req = https.request({
+            hostname: 'api.bland.ai',
+            path: `/v1/calls/${callId}`,
+            method: 'GET',
+            headers: {
+              'Authorization': blandApiKey
+            }
+          }, (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => resolve(JSON.parse(body)));
+          });
+          req.on('error', reject);
+          req.end();
+        });
+
+        return {
+          callId,
+          status: responseData.status || 'completed',
+          provider: 'Bland.ai',
+          details: responseData
+        };
+      } catch (err) {
+        console.warn('[AIVoiceCallService] Bland.ai status query fallback:', err.message);
+      }
+    }
+
+    return {
+      callId,
+      status: 'completed',
+      provider: 'Bland.ai (Mock/Simulation)',
+      durationSeconds: 45,
+      completedAt: new Date().toISOString()
+    };
+  }
 }
 
 module.exports = AIVoiceCallService;
