@@ -525,6 +525,23 @@
           </div>
           <div id="objectionResultBox" style="display: none; background: rgba(8, 18, 32, 0.7); border: 1px solid rgba(192, 132, 252, 0.2); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #e2e8f0; line-height: 1.5;"></div>
         </div>
+
+        <!-- MCP STREAMABLE HTTP / SSE INSPECTOR & TESTER -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; margin-top: 16px;">
+          <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">🔌 MCP Streamable HTTP / SSE Inspector & JSON-RPC 2.0 Client:</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+            <select id="mcpToolSelect" style="background: rgba(8, 18, 32, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); color: #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-family: 'JetBrains Mono', monospace; outline: none; flex: 1; min-width: 250px;">
+              <option value="calculate_ppa_margin">Tool 1: calculate_ppa_margin ($150 PPA vs $24.54 CPL)</option>
+              <option value="check_zip_contractor_coverage">Tool 2: check_zip_contractor_coverage (ZIP 75001 Dallas)</option>
+              <option value="qualify_homeowner_lead">Tool 3: qualify_homeowner_lead (Lead Score & TCPA Check)</option>
+              <option value="reserve_contractor_slot">Tool 4: reserve_contractor_slot (Slot Lock & $150 PPA Debit)</option>
+            </select>
+            <button onclick="testMcpToolCall()" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.2s;">
+              ⚡ Вызвать MCP Инструмент по HTTP/SSE
+            </button>
+          </div>
+          <div id="mcpInspectorLogBox" style="display: none; background: rgba(8, 18, 32, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #e2e8f0; line-height: 1.5;"></div>
+        </div>
       </div>
     </div>
 
@@ -1591,6 +1608,54 @@
       } catch (err) {
         if (box) {
           box.innerHTML = `<div style="color:#f87171;font-weight:700;">⚠️ Error executing AI COS Cycle: ${err.message}</div>`;
+        }
+      }
+    }
+
+    async function testMcpToolCall() {
+      const toolSelect = document.getElementById('mcpToolSelect');
+      const box = document.getElementById('mcpInspectorLogBox');
+      const toolName = toolSelect ? toolSelect.value : 'calculate_ppa_margin';
+
+      if (box) {
+        box.style.display = 'block';
+        box.innerHTML = `<div style="color:#38bdf8;font-weight:700;">🔌 [MCP STREAMABLE HTTP/SSE] Sending JSON-RPC 2.0 tools/call request...</div>`;
+      }
+
+      const toolPayloads = {
+        'calculate_ppa_margin': { adSpendUsd: 100, ppaWinningBid: 150, cplAcquisitionCost: 24.54 },
+        'check_zip_contractor_coverage': { zipCode: '75001', vertical: 'Roofing' },
+        'qualify_homeowner_lead': { zipCode: '75001', homeownerStatus: true, estimatedBudgetUsd: 12000, roofAgeYears: 15, tcpaConsentConfirmed: true },
+        'reserve_contractor_slot': { contractorId: 'ctr_75001_1', zipCode: '75001', slotTime: new Date(Date.now()+86400000).toISOString(), customerName: 'John Smith' }
+      };
+
+      const payload = {
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'tools/call',
+        params: {
+          name: toolName,
+          arguments: toolPayloads[toolName] || { adSpendUsd: 100 }
+        }
+      };
+
+      try {
+        const backendUrl = 'https://unicorn-pro-api-backend.vercel.app';
+        const res = await fetch(`${backendUrl}/api/mcp/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (box) {
+          box.innerHTML = `
+            <div style="color:#10b981;font-weight:800;margin-bottom:6px;">✅ [200 OK] MCP JSON-RPC 2.0 RESPONSE (Tool: <code>${toolName}</code>):</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(15,23,42,0.95);padding:12px;border-radius:6px;border:1px solid rgba(56,189,248,0.3);color:#cbd5e1;white-space:pre-wrap;max-height:220px;overflow-y:auto;">${JSON.stringify(data, null, 2)}</div>
+          `;
+        }
+      } catch (err) {
+        if (box) {
+          box.innerHTML = `<div style="color:#f87171;font-weight:700;">⚠️ MCP Call Error: ${err.message}</div>`;
         }
       }
     }
