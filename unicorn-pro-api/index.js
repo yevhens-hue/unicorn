@@ -45,8 +45,8 @@ const handleTelegramLiveFeed = (req, res) => {
 // ---------------------------------------------------------
 // MODEL CONTEXT PROTOCOL (MCP) REMOTE STREAMABLE HTTP / SSE API
 // ---------------------------------------------------------
-const unicornMcpServer = require('../packages/unicorn_mcp_server/server.js');
-const handleMcpRoute = (req, res) => unicornMcpServer.handleMcpHttpRequest(req, res);
+const McpServerService = require('./src/services/McpServerService');
+const handleMcpRoute = (req, res) => McpServerService.handleMcpHttpRequest(req, res);
 
 app.all('/api/mcp/sse', handleMcpRoute);
 app.all('/mcp/sse', handleMcpRoute);
