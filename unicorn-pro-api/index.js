@@ -16,21 +16,13 @@ const AIVoiceCallService = require('./src/services/AIVoiceCallService');
 const WebhookController = require('./src/controllers/WebhookController');
 const NightlyDigestCronService = require('./src/services/NightlyDigestCronService');
 
-// Normalize Vercel serverless URLs (e.g. /agent/digest -> /api/agent/digest)
-app.use((req, res, next) => {
-  if (req.url.startsWith('/api/api/')) {
-    req.url = req.url.replace('/api/api/', '/api/');
-  } else if (!req.url.startsWith('/api')) {
-    req.url = '/api' + (req.url.startsWith('/') ? '' : '/') + req.url;
-  }
-  next();
-});
-
-// Helper to register routes on both /api/path and /path for Vercel serverless compatibility
+// Helper to register routes on all possible Vercel paths (/api/path, /path, /api/api/path)
 const registerRoute = (method, path, handler) => {
   const cleanPath = path.startsWith('/api') ? path.substring(4) : path;
-  app[method.toLowerCase()](`/api${cleanPath}`, handler);
-  app[method.toLowerCase()](cleanPath, handler);
+  const m = method.toLowerCase();
+  app[m](`/api${cleanPath}`, handler);
+  app[m](cleanPath, handler);
+  app[m](`/api/api${cleanPath}`, handler);
 };
 
 // ---------------------------------------------------------
