@@ -65,6 +65,6 @@ router.get('/telegram/feed', (req, res) => {
 });
 
 app.use('/api', router);
-app.use('/', router);
+app.use(router);
 
 module.exports = app;
