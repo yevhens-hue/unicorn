@@ -33,9 +33,20 @@ app.post('/api/agent/cos/run-cycle', AgentController.runCosCycle);
 app.get('/api/agent/cos/status', AgentController.getCosStatus);
 app.post('/api/agent/voice/test-objection', AgentController.testObjection);
 
+const NightlyDigestCronService = require('./src/services/NightlyDigestCronService');
+
 // ANTI-ECHO WEBHOOK GUARD ENDPOINTS (CRM 2-WAY SYNC)
 app.post('/api/webhooks/contractor-crm/sync', WebhookController.syncContractorCrmWebhook);
 app.get('/api/webhooks/contractor-crm/status', WebhookController.getGuardStatus);
+
+// NIGHTLY 20:30 FOUNDER EXECUTIVE BRIEFING ENDPOINTS
+app.post('/api/agent/cos/trigger-nightly-digest', async (req, res) => {
+  const result = await NightlyDigestCronService.triggerNightlyDigest(req.body || {});
+  return res.status(200).json({ status: 'SUCCESS', digest: result });
+});
+app.get('/api/agent/cos/nightly-digest/status', (req, res) => {
+  return res.status(200).json(NightlyDigestCronService.getStatus());
+});
 
 // Public Telegram Activity Feed API for live website streaming
 const handleTelegramLiveFeed = (req, res) => {
