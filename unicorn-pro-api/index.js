@@ -71,23 +71,7 @@ app.all('/mcp/message', handleMcpRoute);
 app.all('/api/mcp', handleMcpRoute);
 app.all('/mcp', handleMcpRoute);
 
-// ---------------------------------------------------------
-// AI COS AGENT & VOICE BOOKER ENDPOINTS
-// ---------------------------------------------------------
-const handleCosRunCycle = (req, res) => AgentController.runCosCycle(req, res);
-app.post('/api/agent/cos/run-cycle', handleCosRunCycle);
-app.post('/agent/cos/run-cycle', handleCosRunCycle);
-app.post('/api/api/agent/cos/run-cycle', handleCosRunCycle);
-
-const handleCosStatus = (req, res) => AgentController.getCosStatus(req, res);
-app.get('/api/agent/cos/status', handleCosStatus);
-app.get('/agent/cos/status', handleCosStatus);
-app.get('/api/api/agent/cos/status', handleCosStatus);
-
-const handleTestObjection = (req, res) => AgentController.testObjection(req, res);
-app.post('/api/agent/voice/test-objection', handleTestObjection);
-app.post('/agent/voice/test-objection', handleTestObjection);
-app.post('/api/api/agent/voice/test-objection', handleTestObjection);
+registerRoute('get', '/telegram/feed', handleTelegramLiveFeed);
 const handleVoiceCall = async (req, res) => {
   try {
     const leadId = parseInt(req.params.leadId);
