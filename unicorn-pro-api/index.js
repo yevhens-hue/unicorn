@@ -13,31 +13,22 @@ const TelegramAlertService = require('./src/services/TelegramAlertService');
 const AIAgentService = require('./src/services/AIAgentService');
 const AIVoiceCallService = require('./src/services/AIVoiceCallService');
 
-// Normalize Vercel serverless URLs (e.g. /agent/digest -> /api/agent/digest)
-app.use((req, res, next) => {
-  if (req.url.startsWith('/api/api/')) {
-    req.url = req.url.replace('/api/api/', '/api/');
-  } else if (!req.url.startsWith('/api')) {
-    req.url = '/api' + (req.url.startsWith('/') ? '' : '/') + req.url;
-  }
-  next();
-});
-
 const WebhookController = require('./src/controllers/WebhookController');
+const NightlyDigestCronService = require('./src/services/NightlyDigestCronService');
+
+const apiRouter = express.Router();
 
 // ---------------------------------------------------------
 // PING-POST ENGINE & AI AGENT ENDPOINTS
 // ---------------------------------------------------------
-app.post('/api/leads', LeadController.submitLead);
-app.post('/api/agent/cos/run-cycle', AgentController.runCosCycle);
-app.get('/api/agent/cos/status', AgentController.getCosStatus);
-app.post('/api/agent/voice/test-objection', AgentController.testObjection);
-
-const NightlyDigestCronService = require('./src/services/NightlyDigestCronService');
+apiRouter.post('/leads', LeadController.submitLead);
+apiRouter.post('/agent/cos/run-cycle', AgentController.runCosCycle);
+apiRouter.get('/agent/cos/status', AgentController.getCosStatus);
+apiRouter.post('/agent/voice/test-objection', AgentController.testObjection);
 
 // ANTI-ECHO WEBHOOK GUARD ENDPOINTS (CRM 2-WAY SYNC)
-app.post('/api/webhooks/contractor-crm/sync', WebhookController.syncContractorCrmWebhook);
-app.get('/api/webhooks/contractor-crm/status', WebhookController.getGuardStatus);
+apiRouter.post('/webhooks/contractor-crm/sync', WebhookController.syncContractorCrmWebhook);
+apiRouter.get('/webhooks/contractor-crm/status', WebhookController.getGuardStatus);
 
 // NIGHTLY 20:30 FOUNDER EXECUTIVE BRIEFING ENDPOINTS
 const handleNightlyDigestTrigger = async (req, res) => {
@@ -48,10 +39,12 @@ const handleNightlyDigestStatus = (req, res) => {
   return res.status(200).json(NightlyDigestCronService.getStatus());
 };
 
-app.post('/api/agent/cos/trigger-nightly-digest', handleNightlyDigestTrigger);
-app.post('/agent/cos/trigger-nightly-digest', handleNightlyDigestTrigger);
-app.get('/api/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
-app.get('/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
+apiRouter.post('/agent/cos/trigger-nightly-digest', handleNightlyDigestTrigger);
+apiRouter.get('/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
+
+// Mount Router to both /api and / to guarantee Vercel serverless compatibility
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
 
 // Public Telegram Activity Feed API for live website streaming
 const handleTelegramLiveFeed = (req, res) => {
