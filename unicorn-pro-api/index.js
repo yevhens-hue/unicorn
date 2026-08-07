@@ -36,16 +36,29 @@ app.post('/api/agent/voice/test-objection', AgentController.testObjection);
 
 // ANTI-ECHO WEBHOOK GUARD ENDPOINTS (CRM 2-WAY SYNC)
 app.post('/api/webhooks/contractor-crm/sync', WebhookController.syncContractorCrmWebhook);
+app.post('/webhooks/contractor-crm/sync', WebhookController.syncContractorCrmWebhook);
+app.post('/api/api/webhooks/contractor-crm/sync', WebhookController.syncContractorCrmWebhook);
+
 app.get('/api/webhooks/contractor-crm/status', WebhookController.getGuardStatus);
+app.get('/webhooks/contractor-crm/status', WebhookController.getGuardStatus);
+app.get('/api/api/webhooks/contractor-crm/status', WebhookController.getGuardStatus);
 
 // NIGHTLY 20:30 FOUNDER EXECUTIVE BRIEFING ENDPOINTS
-app.post('/api/agent/cos/trigger-nightly-digest', async (req, res) => {
+const handleNightlyDigestTrigger = async (req, res) => {
   const result = await NightlyDigestCronService.triggerNightlyDigest(req.body || {});
   return res.status(200).json({ status: 'SUCCESS', digest: result });
-});
-app.get('/api/agent/cos/nightly-digest/status', (req, res) => {
+};
+const handleNightlyDigestStatus = (req, res) => {
   return res.status(200).json(NightlyDigestCronService.getStatus());
-});
+};
+
+app.post('/api/agent/cos/trigger-nightly-digest', handleNightlyDigestTrigger);
+app.post('/agent/cos/trigger-nightly-digest', handleNightlyDigestTrigger);
+app.post('/api/api/agent/cos/trigger-nightly-digest', handleNightlyDigestTrigger);
+
+app.get('/api/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
+app.get('/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
+app.get('/api/api/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
 
 // ---------------------------------------------------------
 // MODEL CONTEXT PROTOCOL (MCP) REMOTE STREAMABLE HTTP / SSE API
