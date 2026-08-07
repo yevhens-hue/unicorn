@@ -1,80 +1,68 @@
-# 🦄 Unicorn Pro — Handoff Document
-> Останнє оновлення сесії: 2026-08-03T00:00:00+02:00
+# 🤝 Session Handoff & Continuity Document
+> **Project:** Unicorn Pro & Alfred Household Chief of Staff AI Agent  
+> **Session Status:** ALL REQUESTS 100% COMPLETE & DEPLOYED  
+> **Date:** August 8, 2026
 
 ---
 
-## 📍 Поточний стан проєкту & Демо Сторінки
+## 📌 Executive Summary of Accomplishments
 
-| Версія | URL | Опис |
-|--------|-----|------|
-| **Production (Live)** | https://yevhen-unicorn-test.surge.sh | **Головний інтерактивний дашборд** з оновленою консистентною навігацією, уніфікованим дашборд-дропдауном та узгодженими метриками |
-| **Live Connector Page** | https://yevhen-unicorn-test.surge.sh/live-connector.html | Моніторинг та динамічне підключення Google Sheets у реальному часі |
-| **Dataset View** | https://yevhen-unicorn-test.surge.sh/dataset.html | Перегляд повного датасету (5,323 лідів) |
-| **V1 Backup** | https://yevhen-unicorn-v1.surge.sh | Збережена версія попереднього дашборду |
-| **GitHub Repo** | https://github.com/yevhens-hue/unicorn | Сирцевий код проєкту |
+During this session, we accomplished all architectural, security, and portfolio goals:
 
----
+1. **Google Antigravity (AGY) SDK Multi-Agent Topology (`packages/unicorn_agentic_sdk/main.py`)**:
+   - Integrated **Subagent 5 (`AdversarialCriticSubagent`)**: Doubt-driven security auditor stress-testing Meta Ads scaling (+25%) and floor price hikes ($165 PPA). Computes risk score (15/100) and outputs `APPROVED_WITH_CAP` verdict (+15% cap).
+   - Integrated **Subagent 6 (`LeadRagQualificationSubagent`)**: RAG lead qualification engine retrieving Texas municipal codes (`TEXAS_IRBC_2024_HAIL`), computing RAG score (`95/100`), and matching certified contractor tags (`CLASS_4_IMPACT_CERTIFIED_ROOFER`).
 
-## 🗂 Результати та досягнення сесії
+2. **Complete Alfred Household Chief of Staff Portfolio Package (`packages/alfred_household_agent/`)**:
+   - Built complete 8-file Python package matching Upwork client specification (`alfred-household-cos-spec.md`):
+     - `database/schema.sql` (PostgreSQL DDL).
+     - `services/claude_extractor.py` (Pydantic structured extraction & $500 approval gate).
+     - `services/todoist_sync.py` (3-layer anti-loop Todoist sync engine).
+     - `services/bill_vision_parser.py` (Claude 3.5 Sonnet / Vision OCR bill parser with DO Spaces link).
+     - `services/digest_scheduler.py` (20:30 Chief of Staff briefing generator & 2-day waiting-on worker).
+     - `hermes/skill_governance.py` (AST code inspection & hash pinning security audit).
 
-### 1. 🧭 Оновлення та уніфікація навігації (Header / Nav)
-- Створено зручний **дропдаун `03 Дашборд ▾`** у навбарі на сторінках `index.html` та `live-connector.html`.
-- До дропдауну `03 Дашборд` об'єднано підрозділи:
-  - 📊 Дашборд (`#task3`)
-  - 📋 План дій (`#action`)
-  - 🗺️ Geo Map (`#geoheat`)
-  - 🎛️ What-If (`#whatif`)
-  - ⚡ Matrix (`#matrix`)
-  - 📊 До/Після (`#beforeafter`)
-- Пункт **`🟢 Live Data`** винесено окремим самостійним кнопковим посиланням поруч із дашбордом.
-- Усунено всі посилання на AI Analyzer / Copilot із навбару відповідно до вимог.
+3. **Unicorn Pro API Architectural & Security Services (`unicorn-pro-api/`)**:
+   - Built **`AntiEchoWebhookGuardService.js`**: 3-layer anti-loop engine (Mapping Table + 30s TTL Cache + HMAC SHA-256) for 2-way CRM webhooks (`POST /api/webhooks/contractor-crm/sync`).
+   - Built **`NightlyDigestCronService.js`**: 20:30 Founder Executive Briefing Telegram dispatch engine (`POST /api/agent/cos/trigger-nightly-digest`).
+   - Built **`McpSafetyGovernanceService.js`**: Dynamic AST Security Threat Scanner & Financial Approval Gate ($1,000 threshold) (`GET /api/mcp/safety/status`).
+   - Built **`McpServerService.js`**: Self-contained Streamable HTTP & SSE MCP server (`POST /api/mcp/message`, `GET /api/mcp/sse`).
 
-### 2. 🙈 Приховування блоків за запитом користувача (`display:none`)
-- Приховано розділ **AI Analyzer** (`ai-analyzer.html` вміст `display:none`, посилання вилучені з усіх меню).
-- Приховано розділ **AI Copilot**.
-- Приховано блок **Google Sheets Live Connector** з головної сторінки (`#live-connector`), оскільки для цього функціоналу створено окрему сторінку `live-connector.html`.
-- Приховано блок **Implementation Timeline Q3–Q4 2026** (Gantt-роадмап, `#timeline`).
+4. **Live Dashboard & Deployment (`yevhen-unicorn-test.surge.sh`)**:
+   - Updated `unicorn-pro/live-connector.html` with interactive test modules for:
+     - MCP JSON-RPC 2.0 Tool Call Tester.
+     - 20:30 Founder Executive Briefing Generator.
+     - AST Safety Governance Threat Inspector (`DROP DATABASE` & `$15,000 PPA Debit` security blocks).
+   - Deployed live to Surge: 👉 **[https://yevhen-unicorn-test.surge.sh/live-connector.html](https://yevhen-unicorn-test.surge.sh/live-connector.html)**
 
-### 3. 🛠 Виправлення логіки сповіщень Live Data (`live-connector.html`)
-- Усунено хибний тригер `⚡ Виявлено зміни!`: раніше при зміні пресету дат система порівнювала відфільтровані дані з повними і виводила від'ємну різницю (наприклад, `Ліди: -4080`).
-- Впроваджено прапорець `isRefresh`: повідомлення про зміни виводиться **тільки** при реальному повторному завантаженні джерела даних з Google Sheets / CSV.
-
-### 4. 📐 Повна звірка та юстирування метрик датасету
-Здійснено точний розрахунок за 5,323 лідами з `dataset.csv`:
-- **Кількість лідів:** 5,323 (Sold: 4,305 · Returned: 558 · Pending: 460)
-- **Total Spend:** $130,621.22 (Сер. CPL: $24.54)
-- **Total Revenue (Тільки Sold):** $158,256.67 (Сер. Sold Price: $36.76)
-- **Net Profit:** $27,635.45 | **ROI:** 21.2% | **Fill Rate:** 80.9% | **Return Rate:** 10.5%
-
-**Синхронізовано цифри на сайті:**
-- **Hero-блок (`index.html`):** Виторг оновлено $147,820 → **$158,257**, Fill Rate 84.2% → **80.9%**.
-- **KPI Дашборду (`#task3`):** Return Rate оновлено 11.5% → **10.5%**.
-- **Метрики BuyerC:** ROI усунено розбіжність 111.1% → **87.2%** (Profit: +$9,541, Avg Profit/Lead: $24.21), кількість у фільтрі 394 → **443** ліди.
+5. **12 Packaged Reusable Agent Skills (`.agents/skills/` and `~/.gemini/config/skills/`)**:
+   - Created **12 production-grade skills** for instant activation in future projects.
+   - Generated master guide: [reusable_agentic_architectures_guide.md](file:///Users/yevhen/.gemini/antigravity-ide/brain/e9758ebd-6587-4d34-9213-cdfd0db15301/reusable_agentic_architectures_guide.md).
 
 ---
 
-## 📋 Команди для запуску та деплою
+## 🗂 Key Files & Directories
 
-```bash
-# Локальний перегляд
-cd unicorn-pro && npx serve ./
-
-# Surge Deploy (Production)
-cd unicorn-pro && npx surge ./ yevhen-unicorn-test.surge.sh
-```
-
----
-
-## 🔒 Стан сесії
-Сесію успішно збережено. Усі зміни закомічені у файли проєкту та задеплоєні на **[yevhen-unicorn-test.surge.sh](https://yevhen-unicorn-test.surge.sh)**.
+- **Google AGY SDK Pipeline:** [packages/unicorn_agentic_sdk/main.py](file:///Users/yevhen/Cursor/Unicorn/packages/unicorn_agentic_sdk/main.py)
+- **Alfred Agent Portfolio Package:** [packages/alfred_household_agent/](file:///Users/yevhen/Cursor/Unicorn/packages/alfred_household_agent/)
+- **Anti-Echo CRM Guard Service:** [unicorn-pro-api/src/services/AntiEchoWebhookGuardService.js](file:///Users/yevhen/Cursor/Unicorn/unicorn-pro-api/src/services/AntiEchoWebhookGuardService.js)
+- **20:30 Nightly Digest Service:** [unicorn-pro-api/src/services/NightlyDigestCronService.js](file:///Users/yevhen/Cursor/Unicorn/unicorn-pro-api/src/services/NightlyDigestCronService.js)
+- **AST Safety Governance Service:** [unicorn-pro-api/src/services/McpSafetyGovernanceService.js](file:///Users/yevhen/Cursor/Unicorn/unicorn-pro-api/src/services/McpSafetyGovernanceService.js)
+- **MCP Server Service:** [unicorn-pro-api/src/services/McpServerService.js](file:///Users/yevhen/Cursor/Unicorn/unicorn-pro-api/src/services/McpServerService.js)
+- **Express Main Index:** [unicorn-pro-api/index.js](file:///Users/yevhen/Cursor/Unicorn/unicorn-pro-api/index.js)
+- **Live Connector Dashboard UI:** [unicorn-pro/live-connector.html](file:///Users/yevhen/Cursor/Unicorn/unicorn-pro/live-connector.html)
+- **12 Agent Skills Location:** [.agents/skills/](file:///Users/yevhen/Cursor/Unicorn/.agents/skills/) and [~/.gemini/config/skills/](file:///Users/yevhen/.gemini/config/skills/)
 
 ---
 
-## 🤖 Експерименти: Unicorn AI Agent (Copilot)
-В рамках тестування архітектури мульти-агентних систем (на основі Upwork специфікації Alfred), розроблено прототип Майстер-Агента:
-- **Директорія:** `unicorn-agent/`
-- **Файли:** `master_agent.py` (ядро/orchestrator), `skills.py` (ізольовані інструменти), `.env.example` (сховище секретів).
-- **Стек:** Python, pyTelegramBotAPI, LLM Tool Calling pattern.
-- **Статус:** Код готовий до тестування в CLI-режимі. Для інтеграції з Telegram потрібно додати `TELEGRAM_BOT_TOKEN` у `.env`.
+## 🧠 Suggested Skills for Future Sessions
 
-> Останнє оновлення сесії: 2026-08-03T23:44:00+02:00
+When starting a new session or developing new features, invoke these skills:
+- `anti-echo-crm-guard` (when implementing 2-way webhooks or external CRM sync).
+- `ast-safety-governance` (when adding new MCP tools or payment APIs).
+- `nightly-founder-digest` (when setting up executive Telegram notifications).
+- `alfred-cos-agent-architecture` (when building personal operations agents).
+- `adversarial-critic-subagent` (when stress-testing multi-agent growth plans).
+- `lead-rag-qualification` (when matching leads with regulatory building codes).
+- `bill-vision-ocr-parser` (when parsing invoices with multimodal Claude Vision).
+- `mcp-streamable-http-sse` (when creating remote MCP server endpoints).
