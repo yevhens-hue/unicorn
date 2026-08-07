@@ -153,8 +153,24 @@ function handleRequest(request) {
       return { jsonrpc: '2.0', id, result: { tools: TOOLS } };
     }
 
+const McpSafetyGovernanceService = require('./McpSafetyGovernanceService');
+
     if (method === 'tools/call') {
       const { name, arguments: args } = params || {};
+
+      // Enforce AST Security & Safety Governance Inspection
+      const safetyCheck = McpSafetyGovernanceService.inspectToolExecution(name, args || {});
+      if (!safetyCheck.allow) {
+        recordTelemetry(method, name, Date.now() - startTime, 'BLOCKED_SAFETY');
+        return {
+          jsonrpc: '2.0',
+          id,
+          error: {
+            code: -32600,
+            message: `BLOCKED_BY_SAFETY_GOVERNANCE: ${safetyCheck.reason}`
+          }
+        };
+      }
       
       if (name === 'calculate_ppa_margin') {
         const cplCost = args?.cplAcquisitionCost || 24.54;

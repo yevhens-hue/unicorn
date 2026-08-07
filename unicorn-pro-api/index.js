@@ -50,6 +50,8 @@ app.get('/api/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
 app.get('/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
 app.get('/api/api/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
 
+const McpSafetyGovernanceService = require('./src/services/McpSafetyGovernanceService');
+
 // ---------------------------------------------------------
 // MODEL CONTEXT PROTOCOL (MCP) REMOTE STREAMABLE HTTP / SSE API
 // ---------------------------------------------------------
@@ -57,6 +59,7 @@ const handleMcpRoute = (req, res) => McpServerService.handleMcpHttpRequest(req, 
 app.all('/api/mcp/sse', handleMcpRoute);
 app.all('/api/mcp/message', handleMcpRoute);
 app.all('/api/mcp', handleMcpRoute);
+app.get('/api/mcp/safety/status', (req, res) => res.json(McpSafetyGovernanceService.getAuditStatus()));
 
 // ---------------------------------------------------------
 // PUBLIC TELEGRAM FEED API
