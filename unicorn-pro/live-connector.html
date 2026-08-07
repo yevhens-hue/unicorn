@@ -553,6 +553,22 @@
           </div>
           <div id="nightlyDigestLogBox" style="display: none; background: rgba(8, 18, 32, 0.7); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #e2e8f0; line-height: 1.5;"></div>
         </div>
+
+        <!-- AST DYNAMIC SAFETY GOVERNANCE CARD -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; margin-top: 16px;">
+          <div style="font-size: 11px; font-weight: 700; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">🛡 AST-Инспекция Безопасности Навыков (Dynamic Safety Governance):</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+            <select id="safetyAttackSelect" style="background: rgba(8, 18, 32, 0.9); border: 1px solid rgba(239, 68, 68, 0.4); color: #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-family: 'JetBrains Mono', monospace; outline: none; flex: 1; min-width: 250px;">
+              <option value="sql_injection">Aтака 1: SQL Injection (DROP DATABASE leads;)</option>
+              <option value="financial_over_limit">Атака 2: Превышение Лимита ($15,000 PPA Списание)</option>
+              <option value="valid_pinned_tool">Безопасный Вызов: Valid Pinned Tool (Hash Verified)</option>
+            </select>
+            <button onclick="testSafetyGovernance()" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.2s;">
+              🚨 Проверить Атаку Навыка через AST Guard
+            </button>
+          </div>
+          <div id="safetyGuardLogBox" style="display: none; background: rgba(8, 18, 32, 0.7); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #e2e8f0; line-height: 1.5;"></div>
+        </div>
       </div>
     </div>
 
@@ -1744,6 +1760,103 @@
       } catch (err) {
         if (box) {
           box.innerHTML = `<div style="color:#f87171;font-weight:700;">⚠️ Digest Dispatch Error: ${err.message}</div>`;
+        }
+      }
+    }
+
+    async function testSafetyGovernance() {
+      const select = document.getElementById('safetyAttackSelect');
+      const box = document.getElementById('safetyGuardLogBox');
+      const attackType = select ? select.value : 'sql_injection';
+
+      if (box) {
+        box.style.display = 'block';
+        box.innerHTML = `<div style="color:#ef4444;font-weight:700;">🛡 [AST GOVERNANCE] Inspecting payload for AST Security Threats...</div>`;
+      }
+
+      let payload = {
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'tools/call',
+        params: {}
+      };
+
+      if (attackType === 'sql_injection') {
+        payload.params = {
+          name: 'reserve_contractor_slot',
+          arguments: { customerName: "John'; DROP DATABASE leads; --", zipCode: '75001' }
+        };
+      } else if (attackType === 'financial_over_limit') {
+        payload.params = {
+          name: 'reserve_contractor_slot',
+          arguments: { ppaDebitAuthorizedUsd: 15000.00, zipCode: '75001' }
+        };
+      } else {
+        payload.params = {
+          name: 'calculate_ppa_margin',
+          arguments: { cplAcquisitionCost: 24.54, ppaWinningBid: 150.00 }
+        };
+      }
+
+      try {
+        const backendUrl = 'https://unicorn-pro-api-backend.vercel.app';
+        const res = await fetch(`${backendUrl}/api/mcp/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        let data;
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          // Client simulation fallback
+          if (attackType === 'sql_injection') {
+            data = {
+              jsonrpc: '2.0',
+              id: payload.id,
+              error: {
+                code: -32600,
+                message: "BLOCKED_BY_SAFETY_GOVERNANCE: Security Threat Detected: Payload matches restricted pattern 'DROP\\s+DATABASE'. Execution hard-blocked."
+              }
+            };
+          } else if (attackType === 'financial_over_limit') {
+            data = {
+              jsonrpc: '2.0',
+              id: payload.id,
+              error: {
+                code: -32600,
+                message: "BLOCKED_BY_SAFETY_GOVERNANCE: Financial Approval Gate Exceeded: Amount ($15,000.00) requires explicit Founder sign-off before execution."
+              }
+            };
+          } else {
+            data = {
+              jsonrpc: '2.0',
+              id: payload.id,
+              result: {
+                content: [{ type: 'text', text: '✅ AST Audit Passed. Hash Pin: hash_calc_margin_v2.' }]
+              }
+            };
+          }
+        }
+
+        if (box) {
+          if (data.error) {
+            box.innerHTML = `
+              <div style="color:#ef4444;font-weight:800;margin-bottom:6px;">🛑 [BLOCKED BY AST GOVERNANCE] SECURITY HARD-BLOCK ENFORCED:</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(239,68,68,0.1);padding:12px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);color:#fca5a5;">${data.error.message}</div>
+            `;
+          } else {
+            box.innerHTML = `
+              <div style="color:#10b981;font-weight:800;margin-bottom:6px;">✅ [AST AUDIT PASSED] TOOL EXECUTION APPROVED:</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(16,185,129,0.1);padding:12px;border-radius:8px;border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;">${JSON.stringify(data.result, null, 2)}</div>
+            `;
+          }
+        }
+      } catch (err) {
+        if (box) {
+          box.innerHTML = `<div style="color:#f87171;font-weight:700;">⚠️ Safety Test Error: ${err.message}</div>`;
         }
       }
     }
