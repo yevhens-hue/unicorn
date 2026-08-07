@@ -23,6 +23,8 @@ app.use((req, res, next) => {
   next();
 });
 
+const WebhookController = require('./src/controllers/WebhookController');
+
 // ---------------------------------------------------------
 // PING-POST ENGINE & AI AGENT ENDPOINTS
 // ---------------------------------------------------------
@@ -30,6 +32,10 @@ app.post('/api/leads', LeadController.submitLead);
 app.post('/api/agent/cos/run-cycle', AgentController.runCosCycle);
 app.get('/api/agent/cos/status', AgentController.getCosStatus);
 app.post('/api/agent/voice/test-objection', AgentController.testObjection);
+
+// ANTI-ECHO WEBHOOK GUARD ENDPOINTS (CRM 2-WAY SYNC)
+app.post('/api/webhooks/contractor-crm/sync', WebhookController.syncContractorCrmWebhook);
+app.get('/api/webhooks/contractor-crm/status', WebhookController.getGuardStatus);
 
 // Public Telegram Activity Feed API for live website streaming
 const handleTelegramLiveFeed = (req, res) => {
