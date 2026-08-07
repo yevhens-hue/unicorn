@@ -16,19 +16,24 @@ const AIVoiceCallService = require('./src/services/AIVoiceCallService');
 const WebhookController = require('./src/controllers/WebhookController');
 const NightlyDigestCronService = require('./src/services/NightlyDigestCronService');
 
-const apiRouter = express.Router();
+// Helper to register routes on both /api/path and /path for Vercel serverless compatibility
+const registerRoute = (method, path, handler) => {
+  const cleanPath = path.startsWith('/api') ? path.substring(4) : path;
+  app[method.toLowerCase()](`/api${cleanPath}`, handler);
+  app[method.toLowerCase()](cleanPath, handler);
+};
 
 // ---------------------------------------------------------
 // PING-POST ENGINE & AI AGENT ENDPOINTS
 // ---------------------------------------------------------
-apiRouter.post('/leads', LeadController.submitLead);
-apiRouter.post('/agent/cos/run-cycle', AgentController.runCosCycle);
-apiRouter.get('/agent/cos/status', AgentController.getCosStatus);
-apiRouter.post('/agent/voice/test-objection', AgentController.testObjection);
+registerRoute('post', '/leads', LeadController.submitLead);
+registerRoute('post', '/agent/cos/run-cycle', AgentController.runCosCycle);
+registerRoute('get', '/agent/cos/status', AgentController.getCosStatus);
+registerRoute('post', '/agent/voice/test-objection', AgentController.testObjection);
 
 // ANTI-ECHO WEBHOOK GUARD ENDPOINTS (CRM 2-WAY SYNC)
-apiRouter.post('/webhooks/contractor-crm/sync', WebhookController.syncContractorCrmWebhook);
-apiRouter.get('/webhooks/contractor-crm/status', WebhookController.getGuardStatus);
+registerRoute('post', '/webhooks/contractor-crm/sync', WebhookController.syncContractorCrmWebhook);
+registerRoute('get', '/webhooks/contractor-crm/status', WebhookController.getGuardStatus);
 
 // NIGHTLY 20:30 FOUNDER EXECUTIVE BRIEFING ENDPOINTS
 const handleNightlyDigestTrigger = async (req, res) => {
@@ -39,12 +44,8 @@ const handleNightlyDigestStatus = (req, res) => {
   return res.status(200).json(NightlyDigestCronService.getStatus());
 };
 
-apiRouter.post('/agent/cos/trigger-nightly-digest', handleNightlyDigestTrigger);
-apiRouter.get('/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
-
-// Mount Router to both /api and / to guarantee Vercel serverless compatibility
-app.use('/api', apiRouter);
-app.use('/', apiRouter);
+registerRoute('post', '/agent/cos/trigger-nightly-digest', handleNightlyDigestTrigger);
+registerRoute('get', '/agent/cos/nightly-digest/status', handleNightlyDigestStatus);
 
 // Public Telegram Activity Feed API for live website streaming
 const handleTelegramLiveFeed = (req, res) => {
