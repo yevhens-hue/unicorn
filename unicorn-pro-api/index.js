@@ -6,16 +6,6 @@ const prisma = require('./src/lib/prisma');
 app.use(cors());
 app.use(express.json());
 
-// Vercel Serverless URL Normalization
-app.use((req, res, next) => {
-  if (req.url.startsWith('/api/api/')) {
-    req.url = req.url.replace('/api/api/', '/api/');
-  } else if (!req.url.startsWith('/api')) {
-    req.url = '/api' + (req.url.startsWith('/') ? '' : '/') + req.url;
-  }
-  next();
-});
-
 const LeadController = require('./src/controllers/LeadController');
 const BillingController = require('./src/controllers/BillingController');
 const AgentController = require('./src/controllers/AgentController');
