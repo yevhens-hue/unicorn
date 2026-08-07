@@ -1,34 +1,4 @@
 
 > unicorn-pro-api@1.0.0 build
-> npx prisma generate && npx prisma migrate deploy && node prisma/seed.js
+> prisma generate
 
-Loaded Prisma config from prisma.config.ts.
-
-Prisma config detected, skipping environment variable loading.
-Prisma schema loaded from prisma/schema.prisma
-
-✔ Generated Prisma Client (v6.19.3) to ./node_modules/@prisma/client in 192ms
-
-Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
-
-Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
-
-Loaded Prisma config from prisma.config.ts.
-
-Prisma config detected, skipping environment variable loading.
-Prisma schema loaded from prisma/schema.prisma
-Datasource "db": PostgreSQL database "postgres", schema "public" at "aws-0-ca-central-1.pooler.supabase.com:5432"
-
-1 migration found in prisma/migrations
-
-Error: P3019
-
-The datasource provider `postgresql` specified in your schema does not match the one specified in the migration_lock.toml, `sqlite`. Please remove your current migration directory and start a new migration history with prisma migrate dev. Read more: https://pris.ly/d/migrate-provider-switch
-
-npm error Lifecycle script `build` failed with error:
-npm error code 1
-npm error path /Users/yevhen/.gemini/antigravity/scratch/projects/github/Unicorn/unicorn-pro-api
-npm error workspace unicorn-pro-api@1.0.0
-npm error location /Users/yevhen/.gemini/antigravity/scratch/projects/github/Unicorn/unicorn-pro-api
-npm error command failed
-npm error command sh -c npx prisma generate && npx prisma migrate deploy && node prisma/seed.js

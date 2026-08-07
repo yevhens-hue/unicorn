@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Unicorn Pro Custom MCP (Model Context Protocol) Server
- * Standard JSON-RPC 2.0 Stdio Transport Implementation (Zero External Dependencies)
+ * Supports Dual Transport: Stdio (CLI) & SSE/HTTP Streamable Transport (Express Remote Endpoint)
  * Exposes custom tools, resources, and prompts for Home Services Lead Monetization.
  */
 
@@ -86,7 +86,7 @@ const PROMPTS = [
 ];
 
 // ----------------------------------------------------------------------------
-// JSON-RPC 2.0 HANDLERS
+// JSON-RPC 2.0 HANDLER ENGINE
 // ----------------------------------------------------------------------------
 
 function handleRequest(request) {
@@ -216,22 +216,61 @@ function handleRequest(request) {
 }
 
 // ----------------------------------------------------------------------------
-// STDIO TRANSPORT LOOP
+// EXPRESS HTTP / SSE TRANSPORT ROUTER
 // ----------------------------------------------------------------------------
 
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: false });
-
-rl.on('line', (line) => {
-  if (!line.trim()) return;
-  try {
-    const request = JSON.parse(line);
-    const response = handleRequest(request);
-    if (response) {
-      console.log(JSON.stringify(response));
-    }
-  } catch (err) {
-    console.log(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }));
+function handleMcpHttpRequest(req, res) {
+  // SSE Transport Stream
+  if (req.method === 'GET' && (req.path === '/sse' || req.path === '/mcp/sse')) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.write(`event: endpoint\ndata: /api/mcp/message\n\n`);
+    res.write(`event: message\ndata: ${JSON.stringify({ jsonrpc: '2.0', method: 'server/ready', params: SERVER_INFO })}\n\n`);
+    return;
   }
-});
 
-console.error('🦄 Unicorn Custom MCP Server running on Stdio (JSON-RPC 2.0).');
+  // Streamable HTTP Message Endpoint
+  if (req.method === 'POST') {
+    const response = handleRequest(req.body || {});
+    return res.json(response);
+  }
+
+  // Info endpoint
+  return res.json({
+    status: 'online',
+    protocol: 'MCP Streamable HTTP / SSE',
+    serverInfo: SERVER_INFO,
+    endpoints: { sse: '/api/mcp/sse', message: '/api/mcp/message' }
+  });
+}
+
+// ----------------------------------------------------------------------------
+// STDIO TRANSPORT LOOP (Only if executed directly as CLI)
+// ----------------------------------------------------------------------------
+
+if (require.main === module) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: false });
+  rl.on('line', (line) => {
+    if (!line.trim()) return;
+    try {
+      const request = JSON.parse(line);
+      const response = handleRequest(request);
+      if (response) {
+        console.log(JSON.stringify(response));
+      }
+    } catch (err) {
+      console.log(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }));
+    }
+  });
+  console.error('🦄 Unicorn Custom MCP Server running on Stdio (JSON-RPC 2.0).');
+}
+
+module.exports = {
+  SERVER_INFO,
+  TOOLS,
+  RESOURCES,
+  PROMPTS,
+  handleRequest,
+  handleMcpHttpRequest
+};

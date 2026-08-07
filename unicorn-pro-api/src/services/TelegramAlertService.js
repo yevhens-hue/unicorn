@@ -1,3 +1,4 @@
+const https = require('https');
 // In-memory public audit log for live website streaming (Stores last 20 Telegram messages)
 const recentDispatches = [];
 

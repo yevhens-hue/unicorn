@@ -42,8 +42,18 @@ const handleTelegramLiveFeed = (req, res) => {
     dispatches
   });
 };
-app.get('/api/telegram/live-feed', handleTelegramLiveFeed);
-app.get('/telegram/live-feed', handleTelegramLiveFeed);
+// ---------------------------------------------------------
+// MODEL CONTEXT PROTOCOL (MCP) REMOTE STREAMABLE HTTP / SSE API
+// ---------------------------------------------------------
+const unicornMcpServer = require('../packages/unicorn_mcp_server/server.js');
+const handleMcpRoute = (req, res) => unicornMcpServer.handleMcpHttpRequest(req, res);
+
+app.all('/api/mcp/sse', handleMcpRoute);
+app.all('/mcp/sse', handleMcpRoute);
+app.all('/api/mcp/message', handleMcpRoute);
+app.all('/mcp/message', handleMcpRoute);
+app.all('/api/mcp', handleMcpRoute);
+app.all('/mcp', handleMcpRoute);
 
 // ---------------------------------------------------------
 // AI COS AGENT & VOICE BOOKER ENDPOINTS

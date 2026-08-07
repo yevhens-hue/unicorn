@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 const TelegramAlertService = require('./TelegramAlertService');
 const BigQueryStreamService = require('./BigQueryStreamService');
+const ContentEngineService = require('./ContentEngineService');
 
 class AICosAgentService {
   /**
@@ -53,14 +54,11 @@ class AICosAgentService {
         actionsTaken.push(`RAISED Floor Price to $165 (High fill rate ${fillRate.toFixed(1)}% > 85%)`);
       }
 
-      // 5. Dispatch Executive Summary to Telegram
-      await TelegramAlertService.alertDailyDigestAndReschedule({
-        totalLeads,
-        ppaBooked: soldLeads,
-        revenue: soldLeads * recommendedFloorPrice,
-        spend: 5170,
-        profit: (soldLeads * recommendedFloorPrice) - 5170,
-        roas: 261.9
+      // 5. Dispatch Content Engine Multi-Platform Cross-Posting
+      const contentPublishResult = await ContentEngineService.publishMultiPlatform({
+        estimatedDailyProfitUsd: (soldLeads * recommendedFloorPrice) - 5170,
+        ppaFillRatePercent: fillRate.toFixed(1),
+        anomaliesDetected: anomalies
       });
 
       const summary = {
